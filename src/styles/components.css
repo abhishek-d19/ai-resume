@@ -1,0 +1,435 @@
+/* Component-Specific Styles & Micro-Interactions */
+
+/* Sticky Glass Navbar */
+.navbar-wrapper {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  width: 100%;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  background: rgba(255, 255, 255, 0.88);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  transition: all 0.3s ease;
+}
+
+.navbar-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 72px;
+}
+
+.navbar-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 800;
+  font-size: 1.25rem;
+  color: var(--color-teal-dark);
+  letter-spacing: -0.02em;
+}
+
+.navbar-logo-icon {
+  width: 32px;
+  height: 32px;
+  background: var(--color-teal-dark);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-cyan-primary);
+}
+
+.navbar-links {
+  display: flex;
+  align-items: center;
+  gap: 32px;
+  list-style: none;
+}
+
+.navbar-link {
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: #374151;
+  transition: color 0.2s ease;
+}
+
+.navbar-link:hover {
+  color: var(--color-teal-dark);
+}
+
+.btn-cyan-pill {
+  background: var(--color-cyan-primary);
+  color: var(--color-teal-dark);
+  font-weight: 700;
+  font-size: 0.95rem;
+  padding: 12px 24px;
+  border-radius: var(--radius-pill);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 4px 14px rgba(56, 232, 245, 0.35);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.btn-cyan-pill:hover {
+  background: var(--color-cyan-hover);
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 8px 20px rgba(56, 232, 245, 0.5);
+}
+
+.btn-teal-pill {
+  background: var(--color-teal-dark);
+  color: #FFFFFF;
+  font-weight: 700;
+  font-size: 0.95rem;
+  padding: 12px 24px;
+  border-radius: var(--radius-pill);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.25s ease;
+  box-shadow: 0 4px 12px rgba(3, 45, 48, 0.25);
+  text-transform: uppercase;
+}
+
+.btn-teal-pill:hover {
+  background: var(--color-teal-hover);
+  transform: translateY(-2px);
+}
+
+.btn-secondary-pill {
+  background: #EAEAEA;
+  color: var(--color-text-dark);
+  font-weight: 700;
+  font-size: 0.95rem;
+  padding: 12px 24px;
+  border-radius: var(--radius-pill);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.25s ease;
+  text-transform: uppercase;
+}
+
+.btn-secondary-pill:hover {
+  background: #DDD;
+  transform: translateY(-2px);
+}
+
+/* Hero Section Styles */
+.hero-wrapper {
+  position: relative;
+  padding-top: 80px;
+  padding-bottom: 120px;
+  overflow: hidden;
+  text-align: center;
+}
+
+.hero-title {
+  font-size: clamp(2.75rem, 6vw, 4.75rem);
+  font-weight: 900;
+  color: var(--color-text-dark);
+  max-width: 900px;
+  margin: 0 auto 24px auto;
+  line-height: 1.05;
+  letter-spacing: -0.04em;
+}
+
+.hero-subtitle {
+  font-size: clamp(1.05rem, 2vw, 1.25rem);
+  max-width: 680px;
+  margin: 0 auto 36px auto;
+  color: #4B5563;
+  line-height: 1.6;
+}
+
+.hero-cta-group {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin-bottom: 70px;
+  flex-wrap: wrap;
+}
+
+/* Floating AI Ecosystem Connected Journey */
+.ai-journey-wrapper {
+  position: relative;
+  max-width: 1160px;
+  margin: 0 auto;
+  min-height: 540px;
+}
+
+.journey-glass-card {
+  position: absolute;
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(152, 119, 255, 0.22);
+  border-radius: 20px;
+  padding: 22px 26px;
+  box-shadow: 0 20px 50px -10px rgba(152, 119, 255, 0.14), 0 0 0 1px rgba(255, 255, 255, 0.8) inset;
+  text-align: left;
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.4s ease, border-color 0.4s ease;
+  user-select: none;
+  cursor: pointer;
+}
+
+.journey-glass-card:hover {
+  transform: translateY(-8px) scale(1.03) rotate(0deg) !important;
+  box-shadow: 0 30px 65px -10px rgba(152, 119, 255, 0.28), 0 0 30px rgba(56, 232, 245, 0.4);
+  border-color: rgba(152, 119, 255, 0.5);
+  z-index: 50 !important;
+}
+
+.card-step-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  margin-bottom: 12px;
+  text-transform: uppercase;
+}
+
+/* Floating Card Keyframe Animations */
+@keyframes floatCard1 {
+  0%, 100% { transform: translateY(0px) rotate(-3deg); }
+  50% { transform: translateY(-12px) rotate(-2deg); }
+}
+
+@keyframes floatCard2 {
+  0%, 100% { transform: translateY(0px) rotate(3deg); }
+  50% { transform: translateY(-15px) rotate(4deg); }
+}
+
+@keyframes floatCard3 {
+  0%, 100% { transform: translateY(0px) rotate(-2deg); }
+  50% { transform: translateY(-10px) rotate(-1deg); }
+}
+
+@keyframes floatCard4 {
+  0%, 100% { transform: translateY(0px) rotate(4deg); }
+  50% { transform: translateY(-14px) rotate(3deg); }
+}
+
+@keyframes floatCard5 {
+  0%, 100% { transform: translateY(0px) rotate(-1deg); }
+  50% { transform: translateY(-8px) rotate(-2deg); }
+}
+
+.animate-card-1 { animation: floatCard1 6s ease-in-out infinite; }
+.animate-card-2 { animation: floatCard2 7s ease-in-out infinite; }
+.animate-card-3 { animation: floatCard3 6.5s ease-in-out infinite; }
+.animate-card-4 { animation: floatCard4 7.5s ease-in-out infinite; }
+.animate-card-5 { animation: floatCard5 5.5s ease-in-out infinite; }
+
+/* Responsive adjustments for journey ecosystem */
+@media (max-width: 992px) {
+  .ai-journey-wrapper {
+    min-height: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    padding: 0 16px;
+  }
+  .journey-glass-card {
+    position: relative !important;
+    top: auto !important;
+    left: auto !important;
+    right: auto !important;
+    bottom: auto !important;
+    transform: none !important;
+    width: 100% !important;
+    animation: none !important;
+  }
+  .journey-connecting-svg {
+    display: none;
+  }
+}
+
+/* Feature Cards Section */
+.feature-card-yellow {
+  background: var(--color-card-yellow);
+  color: var(--color-text-yellow-dark);
+  border-radius: var(--radius-xl);
+  padding: 56px 48px;
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: 40px;
+  align-items: center;
+  margin-bottom: 40px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 20px 40px rgba(245, 187, 39, 0.25);
+}
+
+.feature-card-purple {
+  background: var(--color-card-purple);
+  color: #FFFFFF;
+  border-radius: var(--radius-xl);
+  padding: 56px 48px;
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: 40px;
+  align-items: center;
+  margin-bottom: 40px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 20px 40px rgba(152, 119, 255, 0.25);
+}
+
+@media (max-width: 900px) {
+  .feature-card-yellow, .feature-card-purple {
+    grid-template-columns: 1fr;
+    padding: 36px 24px;
+  }
+}
+
+.feature-card-title {
+  font-size: clamp(2rem, 4vw, 3rem);
+  line-height: 1.05;
+  margin-bottom: 20px;
+  letter-spacing: -0.03em;
+}
+
+/* Testimonials Grid */
+.testimonials-header {
+  text-align: center;
+  max-width: 700px;
+  margin: 0 auto 60px auto;
+}
+
+.testimonials-grid {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 24px;
+}
+
+@media (max-width: 900px) {
+  .testimonials-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.testimonial-stat-box {
+  background: #FFFFFF;
+  border-radius: var(--radius-lg);
+  padding: 40px 32px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.stat-number {
+  font-size: 4rem;
+  font-weight: 900;
+  color: var(--color-teal-dark);
+  line-height: 1;
+  letter-spacing: -0.04em;
+  margin-bottom: 8px;
+}
+
+.testimonial-cards-subgrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;
+}
+
+@media (max-width: 600px) {
+  .testimonial-cards-subgrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.test-card {
+  border-radius: var(--radius-lg);
+  padding: 28px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 200px;
+  transition: transform 0.3s ease;
+}
+
+.test-card:hover {
+  transform: translateY(-4px);
+}
+
+.test-card-brown {
+  background: var(--color-test-brown);
+  color: #FFF;
+}
+
+.test-card-lavender {
+  background: var(--color-test-lavender);
+  color: var(--color-text-dark);
+}
+
+.test-card-green {
+  background: var(--color-test-green);
+  color: #FFF;
+}
+
+.test-card-peach {
+  background: var(--color-test-peach);
+  color: var(--color-text-dark);
+}
+
+/* Footer CTA Banner */
+.footer-cta-wrapper {
+  background: var(--color-teal-dark);
+  color: #FFFFFF;
+  padding: 96px 24px;
+  text-align: center;
+  border-radius: var(--radius-xl);
+  margin-bottom: 60px;
+  position: relative;
+  overflow: hidden;
+}
+
+.footer-cta-title {
+  font-size: clamp(2.5rem, 5vw, 4.25rem);
+  font-weight: 900;
+  margin-bottom: 20px;
+  color: #FFFFFF;
+  letter-spacing: -0.03em;
+}
+
+/* Logo Cloud Marquee */
+.logo-marquee-track {
+  display: flex;
+  align-items: center;
+  gap: 60px;
+  width: max-content;
+  animation: marquee 25s linear infinite;
+}
+
+.logo-marquee-track:hover {
+  animation-play-state: paused;
+}
+
+.brand-logo-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 800;
+  font-size: 1.25rem;
+  color: #9CA3AF;
+  letter-spacing: 0.05em;
+  opacity: 0.7;
+  transition: opacity 0.2s ease;
+}
+
+.brand-logo-item:hover {
+  opacity: 1;
+  color: var(--color-teal-dark);
+}

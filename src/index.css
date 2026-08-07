@@ -1,0 +1,230 @@
+/* Tokens Studio & Lumina AI Design System & Global Styles */
+
+:root {
+  /* Brand Color Tokens */
+  --color-cyan-primary: #38E8F5;
+  --color-cyan-hover: #23F2EE;
+  --color-cyan-light: #E6FAFC;
+  --color-cyan-muted: rgba(56, 232, 245, 0.15);
+  
+  --color-teal-dark: #032D30;
+  --color-teal-hover: #056067;
+  --color-teal-deep: #002B2E;
+
+  --color-bg-light: #F9F9FB;
+  --color-bg-white: #FFFFFF;
+  --color-text-dark: #0C0F0F;
+  --color-text-muted: #6B7280;
+  --color-text-subtle: #9CA3AF;
+  
+  /* Feature Card Tokens */
+  --color-card-yellow: #F5BB27;
+  --color-text-yellow-dark: #2F2302;
+
+  --color-card-purple: #9877FF;
+  --color-text-purple-dark: #08022F;
+
+  /* Testimonial Colors */
+  --color-test-brown: #2F0D02;
+  --color-test-lavender: #E6E1FD;
+  --color-test-green: #162F02;
+  --color-test-peach: #FDE9E4;
+
+  /* Fonts */
+  --font-heading: 'Geist', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-serif-heading: 'Hepta Slab', serif;
+  --font-body: 'Inter', 'Geist', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+
+  /* Elevation & Shadows */
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.04);
+  --shadow-md: 0 12px 24px -8px rgba(0, 0, 0, 0.08);
+  --shadow-lg: 0 24px 48px -12px rgba(0, 0, 0, 0.12);
+  --shadow-glow: 0 0 30px rgba(56, 232, 245, 0.4);
+  --shadow-card: 0 20px 40px -15px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.06);
+
+  /* Radius */
+  --radius-pill: 9999px;
+  --radius-sm: 8px;
+  --radius-md: 16px;
+  --radius-lg: 24px;
+  --radius-xl: 32px;
+}
+
+/* Reset & Defaults */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+/* Accessibility Focus States & High Contrast Outline */
+:focus-visible {
+  outline: 2px solid var(--color-cyan-primary) !important;
+  outline-offset: 2px !important;
+  box-shadow: 0 0 0 4px rgba(56, 232, 245, 0.35) !important;
+}
+
+/* Screen Reader Utility Class */
+.sr-only {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}
+
+/* Reduced Motion for Accessibility */
+@media (prefers-reduced-motion: reduce) {
+  *, ::before, ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+html {
+  font-family: var(--font-body);
+  background-color: var(--color-teal-dark);
+  color: #F8FAFC;
+  scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  overflow-x: hidden;
+  line-height: 1.5;
+}
+
+::selection {
+  background-color: var(--color-cyan-primary);
+  color: var(--color-teal-dark);
+}
+
+/* Typography Base */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-heading);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+}
+
+p {
+  color: #94A3B8;
+  font-size: 1rem;
+  line-height: 1.6;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button {
+  font-family: inherit;
+  border: none;
+  background: none;
+  cursor: pointer;
+}
+
+/* Lumina Button Design System Classes */
+.btn-cyan-pill {
+  background-color: var(--color-cyan-primary);
+  color: var(--color-teal-dark);
+  font-weight: 800;
+  border-radius: var(--radius-pill);
+  padding: 10px 22px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 14px rgba(56, 232, 245, 0.25);
+}
+
+.btn-cyan-pill:hover {
+  background-color: var(--color-cyan-hover);
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 8px 24px rgba(56, 232, 245, 0.4);
+}
+
+.btn-secondary-pill {
+  background-color: rgba(15, 23, 42, 0.8);
+  color: #F8FAFC;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  font-weight: 700;
+  border-radius: var(--radius-pill);
+  padding: 10px 22px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.btn-secondary-pill:hover {
+  border-color: var(--color-cyan-primary);
+  color: var(--color-cyan-primary);
+  transform: translateY(-2px);
+}
+
+/* Card & Container Utility Classes */
+.glass-card {
+  background: rgba(15, 23, 42, 0.65);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Keyframe Animations */
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-10px) rotate(2deg);
+  }
+}
+
+@keyframes pulseGlow {
+  0%, 100% {
+    box-shadow: 0 0 20px rgba(56, 232, 245, 0.4);
+    transform: scale(1);
+  }
+  50% {
+    box-shadow: 0 0 35px rgba(56, 232, 245, 0.7);
+    transform: scale(1.05);
+  }
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #032D30;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #1E293B;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #38E8F5;
+}

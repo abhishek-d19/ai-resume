@@ -1,20 +1,19 @@
-import { ResumeDataSchema } from '../models/types';
+import { DEMO_CANDIDATE } from '../constants/demoCandidate';
 
 export const resumeParserService = {
   /**
    * Parse uploaded file into structured JSON schema
    */
   async parseResumeFile(file) {
-    // Simulated parsing delay for pipeline execution
     await new Promise((resolve) => setTimeout(resolve, 800));
 
     return {
       success: true,
       parsedJson: {
-        candidateName: "Abhishek Sharma",
-        title: "Senior Software Engineer",
-        contact: "abhishek@example.com • San Francisco, CA",
-        summary: "Senior Engineer specializing in design systems, high-throughput micro-frontends, and performance optimization.",
+        candidateName: DEMO_CANDIDATE.name,
+        title: DEMO_CANDIDATE.headline,
+        contact: `${DEMO_CANDIDATE.email} • ${DEMO_CANDIDATE.location}`,
+        summary: DEMO_CANDIDATE.summary,
         scores: {
           overallHealth: "Excellent",
           structure: "Excellent",
@@ -22,7 +21,7 @@ export const resumeParserService = {
           impact: "Strong",
           readability: "Excellent"
         },
-        bullets: ResumeDataSchema.bullets
+        bullets: DEMO_CANDIDATE.experience[0].bullets
       }
     };
   }

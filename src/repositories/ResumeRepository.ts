@@ -1,5 +1,11 @@
 import { supabase } from '../lib/supabaseClient';
-import { CanonicalResumeSchema } from '../features/resume/editor/components/ResumeStudio';
+import { DEMO_CANDIDATE_UUID, buildCanonicalDemoResumeEntity } from '../constants/demoCandidate';
+
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+export function isValidUuid(id: string): boolean {
+  return typeof id === 'string' && UUID_REGEX.test(id);
+}
 
 export interface CreateResumeDTO {
   user_id: string;
@@ -42,6 +48,14 @@ export class ResumeRepository {
   private static analysisStore: Map<string, any[]> = new Map();
   private static panelStore: Map<string, any> = new Map();
   private static jdMatchStore: Map<string, any> = new Map();
+
+  constructor() {
+    // Pre-seed local store with canonical demo candidate entity
+    const demo = buildCanonicalDemoResumeEntity() as ResumeEntity;
+    if (!ResumeRepository.localStore.has(demo.id)) {
+      ResumeRepository.localStore.set(demo.id, demo);
+    }
+  }
 
   async createResume(dto: CreateResumeDTO): Promise<ResumeEntity> {
     try {
@@ -90,10 +104,14 @@ export class ResumeRepository {
   }
 
   async findById(id: string, includeDeleted = false): Promise<ResumeEntity | null> {
-    if (!id || id === 'res-1') {
-      const allLocal = Array.from(ResumeRepository.localStore.values());
-      if (allLocal.length > 0) return allLocal[0];
-      return null;
+    // Non-UUID placeholder check (e.g. 'res-1') -> return demo entity without calling Supabase with invalid UUID
+    if (!id || id === 'res-1' || !isValidUuid(id)) {
+      if (id && ResumeRepository.localStore.has(id)) {
+        return ResumeRepository.localStore.get(id)!;
+      }
+      const demo = buildCanonicalDemoResumeEntity() as ResumeEntity;
+      ResumeRepository.localStore.set(demo.id, demo);
+      return demo;
     }
 
     if (ResumeRepository.localStore.has(id)) {
@@ -147,6 +165,12 @@ export class ResumeRepository {
       console.warn('[ResumeRepository.findByUser Remote Exception]:', err?.message || err);
     }
 
+    if (localMatches.length === 0) {
+      const demo = buildCanonicalDemoResumeEntity(userId) as ResumeEntity;
+      ResumeRepository.localStore.set(demo.id, demo);
+      return [demo];
+    }
+
     return localMatches;
   }
 
@@ -171,6 +195,10 @@ export class ResumeRepository {
     };
 
     ResumeRepository.localStore.set(id, updatedEntity);
+
+    if (!isValidUuid(id)) {
+      return updatedEntity;
+    }
 
     try {
       const updatePayload: Record<string, any> = {
@@ -209,6 +237,8 @@ export class ResumeRepository {
     existing.deleted_at = deletedAt;
     ResumeRepository.localStore.set(id, existing);
 
+    if (!isValidUuid(id)) return true;
+
     try {
       const { error } = await this.client
         .from('resumes')
@@ -230,6 +260,8 @@ export class ResumeRepository {
     existing.deleted_at = null;
     existing.updated_at = new Date().toISOString();
     ResumeRepository.localStore.set(id, existing);
+
+    if (!isValidUuid(id)) return existing;
 
     try {
       const { data, error } = await this.client
@@ -286,7 +318,7 @@ export class ResumeRepository {
   }): Promise<any> {
     const provider = record.provider || 'openai';
     const model = record.model || 'gpt-4o-mini';
-    const prompt_version = record.prompt_version || '3.0.0';
+    const prompt_version = record.prompt_version || '3.4.0';
 
     const entity = {
       id: crypto.randomUUID(),
@@ -303,6 +335,10 @@ export class ResumeRepository {
 
     const existingHistory = ResumeRepository.analysisStore.get(record.resume_id) || [];
     ResumeRepository.analysisStore.set(record.resume_id, [entity, ...existingHistory]);
+
+    if (!isValidUuid(record.resume_id)) {
+      return entity;
+    }
 
     try {
       const { data, error } = await this.client
@@ -338,6 +374,8 @@ export class ResumeRepository {
     const history = ResumeRepository.analysisStore.get(resumeId) || [];
     if (history.length > 0) return history[0];
 
+    if (!isValidUuid(resumeId)) return null;
+
     try {
       const { data, error } = await this.client
         .from('resume_analysis')
@@ -357,6 +395,8 @@ export class ResumeRepository {
 
   async getAnalysisHistory(resumeId: string): Promise<any[]> {
     const history = ResumeRepository.analysisStore.get(resumeId) || [];
+
+    if (!isValidUuid(resumeId)) return history;
 
     try {
       const { data, error } = await this.client
@@ -397,6 +437,8 @@ export class ResumeRepository {
 
     ResumeRepository.panelStore.set(record.resume_id, entity);
 
+    if (!isValidUuid(record.resume_id)) return entity;
+
     try {
       const { data, error } = await this.client
         .from('hiring_panel_results')
@@ -425,6 +467,8 @@ export class ResumeRepository {
     if (ResumeRepository.panelStore.has(resumeId)) {
       return ResumeRepository.panelStore.get(resumeId);
     }
+
+    if (!isValidUuid(resumeId)) return null;
 
     try {
       const { data, error } = await this.client
@@ -464,6 +508,8 @@ export class ResumeRepository {
 
     ResumeRepository.jdMatchStore.set(record.resume_id, entity);
 
+    if (!isValidUuid(record.resume_id)) return entity;
+
     try {
       const { data, error } = await this.client
         .from('jd_matches')
@@ -491,6 +537,8 @@ export class ResumeRepository {
     if (ResumeRepository.jdMatchStore.has(resumeId)) {
       return ResumeRepository.jdMatchStore.get(resumeId);
     }
+
+    if (!isValidUuid(resumeId)) return null;
 
     try {
       const { data, error } = await this.client

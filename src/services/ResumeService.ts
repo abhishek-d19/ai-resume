@@ -1,8 +1,9 @@
-import { ResumeRepository, resumeRepository, ResumeEntity } from '../repositories/ResumeRepository';
+import { ResumeRepository, resumeRepository, ResumeEntity, isValidUuid } from '../repositories/ResumeRepository';
 import { pdfParserServiceInstance } from './PdfParserService';
 import { storageService } from './storageService';
 import { userService } from './userService';
 import { ResumeRestorationService } from '../features/resume/restoration/services/ResumeRestorationService';
+import { DEMO_CANDIDATE_UUID } from '../constants/demoCandidate';
 
 export class ValidationError extends Error {
   constructor(message: string) {
@@ -202,8 +203,8 @@ export class ResumeService {
 
     const userUuid = await userService.resolveUserUuid(userId);
 
-    // If resumeId is invalid or placeholder ('res-1'), return user's latest active resume or auto-create one
-    if (!resumeId || resumeId === 'res-1' || resumeId === 'undefined' || resumeId === 'null') {
+    // If resumeId is invalid or placeholder ('res-1' or non-UUID), return user's latest active resume or auto-create one
+    if (!resumeId || resumeId === 'res-1' || resumeId === DEMO_CANDIDATE_UUID || resumeId === 'undefined' || resumeId === 'null' || !isValidUuid(resumeId)) {
       const userResumes = await this.repository.findByUser(userUuid);
       if (userResumes && userResumes.length > 0) {
         return userResumes[0];

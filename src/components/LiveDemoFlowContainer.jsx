@@ -213,7 +213,7 @@ function DemoLoginView({ onLoginSuccess }) {
       <div className="space-y-3">
         <input 
           type="email" 
-          defaultValue="abhishek@lumina.ai" 
+          defaultValue="tony.stark@example.com" 
           className="w-full p-3.5 rounded-full bg-slate-950/60 border border-slate-800 text-xs text-white text-center focus:outline-none"
         />
         <button
@@ -318,8 +318,10 @@ function DemoImprovementsView({ onNext }) {
   );
 }
 
+import { DEMO_CANDIDATE_UUID } from '../constants/demoCandidate';
+
 // 10. DEMO EXPORT VIEW
-function DemoExportView({ userId, resumeId = 'res-1' }) {
+function DemoExportView({ userId, resumeId = DEMO_CANDIDATE_UUID }) {
   const [exporting, setExporting] = useState(false);
 
   const handleExport = async (template) => {

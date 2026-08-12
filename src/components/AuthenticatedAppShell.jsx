@@ -27,7 +27,7 @@ export default function AuthenticatedAppShell({
   const [activeSubTab, setActiveSubTab] = useState(0);
   const [aiMessage, setAiMessage] = useState('');
   const [aiChatHistory, setAiChatHistory] = useState([
-    { sender: 'ai', text: "Hello Abhishek! I'm your Lumina Career Copilot. How can I help prepare your resume or hiring panel today?" }
+    { sender: 'ai', text: "Hello! I'm your Lumina Career Copilot. How can I help prepare your resume or hiring panel today?" }
   ]);
 
   const primaryNavItems = [

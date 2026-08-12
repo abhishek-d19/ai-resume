@@ -16,8 +16,9 @@ import {
 } from 'lucide-react';
 
 import { hiringCommitteeServiceInstance } from '../services/HiringCommitteeService';
+import { DEMO_CANDIDATE_UUID } from '../constants/demoCandidate';
 
-export default function HiringCommitteeDashboardView({ resumeId = 'res-1', userId, onBack, onNext }) {
+export default function HiringCommitteeDashboardView({ resumeId = DEMO_CANDIDATE_UUID, userId, onBack, onNext }) {
   const [loading, setLoading] = useState(true);
   const [evaluating, setEvaluating] = useState(false);
   const [error, setError] = useState(null);

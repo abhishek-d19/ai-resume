@@ -26,8 +26,9 @@ import { resumeServiceInstance } from '../services/ResumeService';
 import { jdOptimizationServiceInstance } from '../services/JdOptimizationService';
 import { PdfExportService } from '../services/PdfExportService';
 import JdOptimizationReviewModal from './JdOptimizationReviewModal';
+import { DEMO_CANDIDATE_UUID } from '../constants/demoCandidate';
 
-export default function JdMatchDashboardView({ resumeId = 'res-1', userId, onBack, onNext }) {
+export default function JdMatchDashboardView({ resumeId = DEMO_CANDIDATE_UUID, userId, onBack, onNext }) {
   const [jobDescription, setJobDescription] = useState('');
   const [loading, setLoading] = useState(true);
   const [matching, setMatching] = useState(false);

@@ -50,8 +50,10 @@ export interface ResumeStudioProps {
   onNavigateToAnalysis?: (id: string) => void;
 }
 
+import { DEMO_CANDIDATE_UUID } from '../../../../constants/demoCandidate';
+
 export const ResumeStudio: React.FC<ResumeStudioProps> = ({
-  resumeId = 'res-1',
+  resumeId = DEMO_CANDIDATE_UUID,
   userId,
   onBackToDashboard,
   onNavigateToAnalysis

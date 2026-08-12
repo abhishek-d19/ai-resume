@@ -3,9 +3,10 @@ import { RestorationErrorState, UseResumeRestorationOptions, UseResumeRestoratio
 import { ResumeRestorationService } from '../services/ResumeRestorationService';
 import { CanonicalResumeSchema } from '../../editor/components/ResumeStudio';
 import { NotFoundError, ForbiddenError } from '../../../../services/ResumeService';
+import { DEMO_CANDIDATE_UUID } from '../../../../constants/demoCandidate';
 
 export function useResumeRestoration({
-  resumeId = 'res-1',
+  resumeId = DEMO_CANDIDATE_UUID,
   userId
 }: UseResumeRestorationOptions): UseResumeRestorationReturn {
   const [loading, setLoading] = useState<boolean>(true);

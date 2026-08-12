@@ -130,7 +130,7 @@ export default function JDMatchEngine() {
                 <FileText size={14} /> CANDIDATE RESUME
               </div>
               <div style={{ fontWeight: 800, fontSize: '1.1rem', color: 'var(--color-teal-dark)' }}>
-                Abhishek_Sharma_Resume_v2.pdf
+                Tony_Stark_Resume.pdf
               </div>
               <div style={{ fontSize: '0.82rem', color: '#10B981', fontWeight: 700, marginTop: 4 }}>
                 ✓ Parsed & Ready for Alignment

@@ -27,11 +27,13 @@ export interface ResumeExportModalProps {
   data: CanonicalResumeData;
 }
 
+import { DEMO_CANDIDATE_UUID } from '../../../../constants/demoCandidate';
+
 export const ResumeExportModal: React.FC<ResumeExportModalProps> = ({
   isOpen,
   onClose,
-  userId = 'user-1',
-  resumeId = 'res-1',
+  userId = 'usr_demo',
+  resumeId = DEMO_CANDIDATE_UUID,
   resumeTitle = 'Candidate Resume',
   version = 1,
   data

@@ -200,7 +200,7 @@ export default function HeroSection({ navigateToView }) {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 16, marginBottom: 20 }}>
               <div>
                 <h2 style={{ fontSize: '1.75rem', fontWeight: 900, color: '#FFFFFF', marginBottom: 4, letterSpacing: '-0.02em' }}>
-                  Good morning, Abhishek 👋
+                  Good morning, Tony 👋
                 </h2>
                 <div style={{ fontSize: '0.9rem', color: '#A5C9CC' }}>
                   Your career mentor AI is active and monitoring application progress.

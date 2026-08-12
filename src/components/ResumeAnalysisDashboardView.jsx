@@ -30,8 +30,9 @@ import {
 } from 'lucide-react';
 
 import { resumeAnalysisServiceInstance } from '../services/ResumeAnalysisService';
+import { DEMO_CANDIDATE_UUID } from '../constants/demoCandidate';
 
-export default function ResumeAnalysisDashboardView({ resumeId = 'res-1', userId, onBack, onNext }) {
+export default function ResumeAnalysisDashboardView({ resumeId = DEMO_CANDIDATE_UUID, userId, onBack, onNext }) {
   const [loading, setLoading] = useState(true);
   const [analyzing, setAnalyzing] = useState(false);
   const [error, setError] = useState(null);

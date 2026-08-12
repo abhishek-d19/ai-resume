@@ -3,28 +3,26 @@
  * Defines canonical schemas for User Profiles, Resumes, Panel Reviews, and JD Match results.
  */
 
+import { DEMO_CANDIDATE } from '../constants/demoCandidate';
+
 export const UserProfileSchema = {
   id: '',
   email: '',
   fullName: '',
-  targetRole: 'Software Engineer',
+  targetRole: 'Principal Software Engineer & Systems Architect',
   careerConfidence: 'High'
 };
 
 export const ResumeDataSchema = {
   id: '',
   userId: '',
-  title: 'Abhishek_Sharma_Resume.pdf',
+  title: DEMO_CANDIDATE.resumeFileName,
   fileUrl: '',
   impactScore: 82,
   structureScore: 'Excellent',
   keywordsScore: 'Needs Work',
   readabilityScore: 'Excellent',
-  bullets: [
-    "Architected distributed multi-tenant design system scaling across 14 enterprise web applications, reducing bundle size by 35%.",
-    "Engineered real-time AI prompt transformation engine, reducing TTI by 42% for 300,000+ active enterprise users.",
-    "Led cross-functional team of 6 engineers to launch automated token pipeline directly into GitHub CI/CD, eliminating manual handoffs."
-  ]
+  bullets: DEMO_CANDIDATE.experience[0].bullets
 };
 
 export const ReviewerSchema = {
@@ -37,13 +35,4 @@ export const ReviewerSchema = {
   feedback: '',
   improvements: '',
   verdict: 'Hire'
-};
-
-export const JdMatchResultSchema = {
-  jobTitle: 'Senior Software Engineer',
-  company: 'Google',
-  matchScore: 96,
-  matchingSkills: [],
-  missingSkills: [],
-  suggestions: []
 };

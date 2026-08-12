@@ -20,10 +20,11 @@ import {
   AlertTriangle
 } from 'lucide-react';
 import { hiringPanelServiceInstance } from '../services/HiringPanelService';
+import { DEMO_CANDIDATE_UUID } from '../constants/demoCandidate';
 import PremiumLoader from './PremiumLoader';
 
 export default function HiringPanelExperience({ 
-  resumeId = 'res-1', 
+  resumeId = DEMO_CANDIDATE_UUID, 
   userId, 
   onNavigateToJdMatch, 
   onNavigateToStudio 

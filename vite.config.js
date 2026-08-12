@@ -86,74 +86,13 @@ function userSyncApiPlugin() {
   };
 }
 
-function resumeUploadApiPlugin() {
-  return {
-    name: 'resume-upload-api',
-    configureServer(server) {
-      server.middlewares.use('/api/resumes/upload', async (req, res, next) => {
-        if (req.method !== 'POST') return next();
-
-        const chunks = [];
-        req.on('data', chunk => { chunks.push(chunk); });
-        req.on('end', async () => {
-          try {
-            const rawBuffer = Buffer.concat(chunks);
-
-            let fileName = 'Uploaded_Resume.pdf';
-            const rawStr = rawBuffer.toString('binary');
-            const match = rawStr.match(/filename="([^"]+)"/);
-            if (match && match[1]) {
-              fileName = match[1];
-            }
-
-            const pdfStart = rawBuffer.indexOf('%PDF-');
-            const pdfEnd = rawBuffer.lastIndexOf('%%EOF');
-
-            let pdfBuffer;
-            if (pdfStart !== -1 && pdfEnd !== -1 && pdfEnd > pdfStart) {
-              pdfBuffer = rawBuffer.subarray(pdfStart, pdfEnd + 5);
-            } else if (pdfStart !== -1) {
-              pdfBuffer = rawBuffer.subarray(pdfStart);
-            } else {
-              pdfBuffer = rawBuffer;
-            }
-
-            const { pdfParserServiceInstance } = await import('./src/services/PdfParserService.ts');
-
-            const { canonicalContent } = await pdfParserServiceInstance.extractTextAndConvertToCanonicalJson(
-              pdfBuffer,
-              fileName
-            );
-
-            const title = fileName.replace(/\.pdf$/i, '').replace(/[-_]/g, ' ');
-
-            res.statusCode = 200;
-            res.setHeader('Content-Type', 'application/json');
-            return res.end(JSON.stringify({
-              success: true,
-              title,
-              canonicalContent
-            }));
-          } catch (err) {
-            console.error('[Server PDF Upload Error]:', err.message);
-            res.statusCode = 500;
-            res.setHeader('Content-Type', 'application/json');
-            return res.end(JSON.stringify({ success: false, error: err.message }));
-          }
-        });
-      });
-    }
-  };
-}
-
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '');
 
   return {
     plugins: [
       react(),
-      userSyncApiPlugin(),
-      resumeUploadApiPlugin()
+      userSyncApiPlugin()
     ],
     define: {
       'process.env.OPENAI_API_KEY': JSON.stringify(env.OPENAI_API_KEY || env.VITE_OPENAI_API_KEY || ''),

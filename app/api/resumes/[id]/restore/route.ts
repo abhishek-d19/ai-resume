@@ -8,7 +8,7 @@ export async function POST(
   try {
     const { id } = await params;
     const body = await request.json().catch(() => ({}));
-    const userId = body.userId || 'mock-user-1';
+    const userId = body.userId || '';
 
     const restored = await resumeServiceInstance.restoreResume(userId, id);
 

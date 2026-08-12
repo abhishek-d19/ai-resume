@@ -15,7 +15,9 @@ import {
   UserCheck
 } from 'lucide-react';
 
-export default function HiringCommitteeDashboardView({ resumeId, onBack }) {
+import { hiringCommitteeServiceInstance } from '../services/HiringCommitteeService';
+
+export default function HiringCommitteeDashboardView({ resumeId = 'res-1', userId, onBack, onNext }) {
   const [loading, setLoading] = useState(true);
   const [evaluating, setEvaluating] = useState(false);
   const [error, setError] = useState(null);
@@ -24,22 +26,17 @@ export default function HiringCommitteeDashboardView({ resumeId, onBack }) {
 
   useEffect(() => {
     fetchCommitteeEvaluation();
-  }, [resumeId]);
+  }, [resumeId, userId]);
 
   const fetchCommitteeEvaluation = async () => {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(`/api/resumes/${resumeId || 'demo'}/hiring-committee`);
-      const json = await res.json();
-      if (json.success && json.data) {
-        setData(json.data);
-      } else {
-        setData(getSampleCommitteeData());
-      }
+      const result = await hiringCommitteeServiceInstance.evaluateCommittee(userId, resumeId);
+      setData(result);
     } catch (err) {
-      console.warn('Using sample committee evaluation fallback:', err);
-      setData(getSampleCommitteeData());
+      console.error('[HiringCommitteeService Error]:', err.message);
+      setError(err.message || 'Failed to load hiring committee review.');
     } finally {
       setLoading(false);
     }
@@ -49,19 +46,11 @@ export default function HiringCommitteeDashboardView({ resumeId, onBack }) {
     setEvaluating(true);
     setError(null);
     try {
-      const res = await fetch(`/api/resumes/${resumeId || 'demo'}/hiring-committee`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: 'mock-user-1' })
-      });
-      const json = await res.json();
-      if (json.success && json.data) {
-        setData(json.data);
-      } else {
-        throw new Error(json.error || 'Failed to execute hiring committee evaluation');
-      }
+      const result = await hiringCommitteeServiceInstance.evaluateCommittee(userId, resumeId);
+      setData(result);
     } catch (err) {
-      setError(err.message || 'Committee evaluation failed.');
+      console.error('[HiringCommitteeService Evaluate Error]:', err.message);
+      setError(err.message || 'Hiring committee review failed.');
     } finally {
       setEvaluating(false);
     }
@@ -73,6 +62,17 @@ export default function HiringCommitteeDashboardView({ resumeId, onBack }) {
 
   if (loading) {
     return <CommitteeSkeletonLoading onBack={onBack} />;
+  }
+
+  if (error && !data) {
+    return (
+      <div className="min-h-[60vh] flex flex-col items-center justify-center p-8 max-w-xl mx-auto text-center font-sans">
+        <AlertTriangle className="w-12 h-12 text-amber-400 mb-4" />
+        <h2 className="text-xl font-bold text-white mb-2">Committee Evaluation Failed</h2>
+        <p className="text-slate-400 text-sm mb-6">{error}</p>
+        <button
+          onClick={fetchCommitteeEvaluation}
+    );
   }
 
   const committee = data || getSampleCommitteeData();
@@ -318,6 +318,24 @@ export default function HiringCommitteeDashboardView({ resumeId, onBack }) {
           </div>
 
         </div>
+
+        {/* GUIDED NEXT STEP PRIMARY CTA BANNER */}
+        {onNext && (
+          <div className="p-6 rounded-2xl bg-gradient-to-r from-slate-900/90 to-[#032D30] border border-[#38E8F5]/30 shadow-2xl flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div>
+              <span className="text-xs font-extrabold uppercase tracking-wider text-[#38E8F5]">Next Logical Step in Pipeline</span>
+              <h3 className="text-lg font-bold text-white mt-0.5">Run Job Description Competency Match</h3>
+              <p className="text-xs text-slate-400">Audit candidate skill alignment against target job posting specifications.</p>
+            </div>
+            <button
+              onClick={onNext}
+              className="btn-cyan-pill whitespace-nowrap text-xs py-3 px-6 shadow-lg shadow-[#38E8F5]/20 shrink-0"
+            >
+              <span>Run JD Match</span>
+              <Sparkles className="w-4 h-4" />
+            </button>
+          </div>
+        )}
 
       </div>
     </div>

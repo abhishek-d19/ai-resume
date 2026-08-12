@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { 
   ArrowLeft, 
   RefreshCw, 
@@ -7,8 +7,11 @@ import {
   ShieldAlert, 
   AlertCircle, 
   RotateCcw, 
-  WifiOff, 
-  AlertTriangle
+  Sparkles,
+  ArrowRight,
+  Download,
+  Edit3,
+  Eye
 } from 'lucide-react';
 import { PersonalInfo, PersonalInfoData } from './PersonalInfo';
 import { Summary } from './Summary';
@@ -23,6 +26,9 @@ import { Links, LinkItem } from './Links';
 import { resumeServiceInstance } from '../../../../services/ResumeService';
 import { useResumeRestoration } from '../../restoration/hooks/useResumeRestoration';
 import { useAutosave } from '../../autosave/hooks/useAutosave';
+import { ResumeRestorationService } from '../../restoration/services/ResumeRestorationService';
+import { ResumeExportModal } from '../../export/components/ResumeExportModal';
+import { LiveResumePreviewSheet } from '../../preview/components/LiveResumePreviewSheet';
 
 export interface CanonicalResumeSchema {
   personalInfo: PersonalInfoData;
@@ -41,14 +47,19 @@ export interface ResumeStudioProps {
   resumeId?: string;
   userId?: string;
   onBackToDashboard?: () => void;
+  onNavigateToAnalysis?: (id: string) => void;
 }
 
 export const ResumeStudio: React.FC<ResumeStudioProps> = ({
   resumeId = 'res-1',
-  userId = 'mock-user-1',
-  onBackToDashboard
+  userId,
+  onBackToDashboard,
+  onNavigateToAnalysis
 }) => {
-  // REQUIREMENT: RESUME RESTORATION HOOK (Loads latest database snapshot & preserves state across refresh)
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState<'edit' | 'preview'>('edit');
+
+  // REQUIREMENT: RESUME RESTORATION HOOK
   const {
     loading,
     errorState,
@@ -60,11 +71,14 @@ export const ResumeStudio: React.FC<ResumeStudioProps> = ({
     setResumeData
   } = useResumeRestoration({ resumeId, userId });
 
+  // Fallback dataset to guarantee non-null render
+  const dataToRender = resumeData || ResumeRestorationService.getDefaultSchema();
+
   // REQUIREMENT: PRODUCTION-GRADE AUTOSAVE SYSTEM
   const { saveStatus, errorMessage, retrySave } = useAutosave({
     resumeId,
     userId,
-    data: resumeData,
+    data: dataToRender,
     initialVersion: version,
     delay: 1500
   });
@@ -130,13 +144,12 @@ export const ResumeStudio: React.FC<ResumeStudioProps> = ({
     setResumeData((prev: CanonicalResumeSchema) => ({ ...prev, links }));
   };
 
-  // Render Error & Loading States
-  if (loading || !resumeData) {
+  if (loading) {
     return (
-      <div style={{ padding: '60px 0', textAlign: 'center' }}>
+      <div style={{ padding: '60px 0', textAlign: 'center', background: 'var(--color-bg-light)', minHeight: '100vh' }}>
         <div style={{ display: 'inline-flex', alignItems: 'center', gap: 10, fontSize: '0.95rem', fontWeight: 800, color: 'var(--color-teal-dark)' }}>
           <RefreshCw size={20} className="spin-slow" />
-          <span>Restoring latest saved resume version from database...</span>
+          <span>Loading Professional Resume Studio...</span>
         </div>
       </div>
     );
@@ -177,154 +190,193 @@ export const ResumeStudio: React.FC<ResumeStudioProps> = ({
     );
   }
 
-  if (errorState === 'unauthorized') {
-    return (
-      <div style={{ maxWidth: 640, margin: '60px auto', padding: 32, background: '#FEF2F2', borderRadius: 20, border: '1px solid #FCA5A5', textAlign: 'center' }}>
-        <ShieldAlert size={40} style={{ color: '#991B1B', marginBottom: 16 }} />
-        <h3 style={{ fontSize: '1.4rem', fontWeight: 900, color: '#991B1B', marginBottom: 8 }}>Unauthorized Access</h3>
-        <p style={{ color: '#7F1D1D', marginBottom: 24, fontSize: '0.95rem' }}>You do not have permission to view or edit this resume.</p>
-        {onBackToDashboard && (
-          <button onClick={onBackToDashboard} className="btn-cyan-pill" style={{ padding: '10px 24px', fontSize: '0.9rem' }}>
-            Back to Dashboard
-          </button>
-        )}
-      </div>
-    );
-  }
-
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--color-bg-light)' }}>
+    <div style={{ minHeight: '100vh', background: '#F8FAFC', color: '#0F172A', fontFamily: 'sans-serif' }}>
       
-      {/* TOP NAVIGATION BAR */}
-      <header style={{ position: 'sticky', top: 0, zIndex: 100, background: '#FFFFFF', borderBottom: '1px solid #E2E8F0', padding: '12px 24px' }}>
-        <div className="container" style={{ maxWidth: 1280, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
+      {/* TOP NAVIGATION HEADER */}
+      <header style={{ position: 'sticky', top: 0, zIndex: 100, background: '#FFFFFF', borderBottom: '1px solid #E2E8F0', padding: '12px 24px', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
+        <div style={{ maxWidth: 1440, margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
           
-          {/* Left: Back to Dashboard & Editable Title */}
+          {/* Left: Back & Title */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
             {onBackToDashboard && (
               <button
                 onClick={onBackToDashboard}
-                style={{ background: '#F1F5F9', border: 'none', borderRadius: 10, padding: '8px 14px', fontSize: '0.82rem', fontWeight: 700, color: 'var(--color-teal-dark)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}
+                style={{ background: '#F1F5F9', border: 'none', borderRadius: 10, padding: '8px 14px', fontSize: '0.82rem', fontWeight: 700, color: '#475569', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}
               >
                 <ArrowLeft size={16} />
-                <span>Back to Dashboard</span>
+                <span>Dashboard</span>
               </button>
             )}
 
-            {/* Editable Title */}
             <input
               type="text"
               value={resumeTitle}
               onChange={(e) => setResumeTitle(e.target.value)}
               placeholder="Resume Title..."
-              style={{ border: 'none', outline: 'none', fontSize: '1.1rem', fontWeight: 900, color: 'var(--color-teal-dark)', background: 'transparent', width: 280 }}
+              style={{ border: 'none', outline: 'none', fontSize: '1.1rem', fontWeight: 900, color: '#0F172A', background: 'transparent', width: 260 }}
             />
           </div>
 
-          {/* Right: SAVE STATUS STATE MACHINE BADGES */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            
-            {saveStatus === 'idle' && (
-              <span style={{ fontSize: '0.72rem', fontWeight: 800, padding: '4px 10px', borderRadius: 8, background: '#F1F5F9', color: '#64748B' }}>
-                Idle
-              </span>
-            )}
+          {/* Center: Mobile Responsive Tab Switcher */}
+          <div className="mobile-tabs" style={{ display: 'flex', gap: 6, background: '#F1F5F9', padding: 4, borderRadius: 12 }}>
+            <button
+              onClick={() => setActiveTab('edit')}
+              style={{
+                padding: '6px 16px',
+                borderRadius: 8,
+                fontSize: '0.8rem',
+                fontWeight: 800,
+                border: 'none',
+                cursor: 'pointer',
+                background: activeTab === 'edit' ? '#FFFFFF' : 'transparent',
+                color: activeTab === 'edit' ? '#0F172A' : '#64748B',
+                boxShadow: activeTab === 'edit' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 6
+              }}
+            >
+              <Edit3 size={14} /> <span>Edit Resume</span>
+            </button>
 
-            {saveStatus === 'editing' && (
-              <span style={{ fontSize: '0.72rem', fontWeight: 800, padding: '4px 10px', borderRadius: 8, background: '#FEF3C7', color: '#B45309' }}>
-                Editing...
-              </span>
-            )}
+            <button
+              onClick={() => setActiveTab('preview')}
+              style={{
+                padding: '6px 16px',
+                borderRadius: 8,
+                fontSize: '0.8rem',
+                fontWeight: 800,
+                border: 'none',
+                cursor: 'pointer',
+                background: activeTab === 'preview' ? '#FFFFFF' : 'transparent',
+                color: activeTab === 'preview' ? '#0F172A' : '#64748B',
+                boxShadow: activeTab === 'preview' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 6
+              }}
+            >
+              <Eye size={14} /> <span>Live Preview</span>
+            </button>
+          </div>
 
-            {saveStatus === 'saving' && (
-              <span style={{ fontSize: '0.72rem', fontWeight: 800, padding: '4px 10px', borderRadius: 8, background: '#E0F2FE', color: '#0369A1', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-                <RefreshCw size={12} className="spin-slow" /> Saving...
-              </span>
-            )}
+          {/* Right: Autosave Status, Export PDF, Analyze Resume */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+              padding: '6px 14px',
+              borderRadius: 20,
+              fontSize: '0.8rem',
+              fontWeight: 800,
+              background: saveStatus === 'error' ? '#FEF2F2' : saveStatus === 'saving' ? '#F0F9FF' : '#F0FDF4',
+              color: saveStatus === 'error' ? '#991B1B' : saveStatus === 'saving' ? '#0284C7' : '#166534',
+              border: saveStatus === 'error' ? '1px solid #FCA5A5' : saveStatus === 'saving' ? '1px solid #BAE6FD' : '1px solid #DCFCE7'
+            }}>
+              {saveStatus === 'saving' && <RefreshCw size={14} className="animate-spin" />}
+              {saveStatus === 'saved' && <span>Saved to Cloud ✓</span>}
+              {saveStatus === 'error' && (
+                <>
+                  <AlertCircle size={14} />
+                  <span>Save error</span>
+                  <button onClick={retrySave} style={{ textDecoration: 'underline', fontWeight: 900, cursor: 'pointer', background: 'none', border: 'none', color: 'inherit' }}>Retry</button>
+                </>
+              )}
+              {saveStatus === 'idle' && <span>v{version}</span>}
+            </div>
 
-            {saveStatus === 'saved' && (
-              <span style={{ fontSize: '0.72rem', fontWeight: 800, padding: '4px 10px', borderRadius: 8, background: '#DCFCE7', color: '#166534', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                ✓ Saved
-              </span>
-            )}
+            <button
+              onClick={() => setIsExportModalOpen(true)}
+              style={{
+                background: '#FFFFFF',
+                color: '#0284C7',
+                border: '1px solid #CBD5E1',
+                borderRadius: 12,
+                padding: '9px 18px',
+                fontSize: '0.88rem',
+                fontWeight: 800,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8
+              }}
+            >
+              <Download size={16} />
+              <span>Export PDF</span>
+            </button>
 
-            {saveStatus === 'offline' && (
-              <span style={{ fontSize: '0.72rem', fontWeight: 800, padding: '4px 10px', borderRadius: 8, background: '#FEF3C7', color: '#B45309', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                <WifiOff size={12} /> Offline
-              </span>
+            {onNavigateToAnalysis && (
+              <button
+                onClick={() => onNavigateToAnalysis(resumeId)}
+                style={{
+                  background: '#0284C7',
+                  color: '#FFFFFF',
+                  border: 'none',
+                  borderRadius: 12,
+                  padding: '9px 18px',
+                  fontSize: '0.88rem',
+                  fontWeight: 800,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 8,
+                  boxShadow: '0 4px 14px rgba(2, 132, 199, 0.3)'
+                }}
+              >
+                <Sparkles size={16} />
+                <span>Analyze Resume</span>
+                <ArrowRight size={16} />
+              </button>
             )}
-
-            {saveStatus === 'conflict' && (
-              <span style={{ fontSize: '0.72rem', fontWeight: 800, padding: '4px 10px', borderRadius: 8, background: '#FEE2E2', color: '#991B1B', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                <AlertTriangle size={12} /> Version Conflict
-              </span>
-            )}
-
-            {saveStatus === 'error' && (
-              <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-                <span style={{ fontSize: '0.72rem', fontWeight: 800, padding: '4px 10px', borderRadius: 8, background: '#FEE2E2', color: '#991B1B', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                  <AlertCircle size={12} /> Save Error
-                </span>
-                <button 
-                  onClick={retrySave}
-                  style={{ fontSize: '0.72rem', fontWeight: 800, padding: '3px 10px', borderRadius: 6, background: '#032D30', color: '#38E8F5', border: 'none', cursor: 'pointer' }}
-                >
-                  Retry
-                </button>
-              </div>
-            )}
-
-            <span style={{ fontSize: '0.72rem', fontWeight: 800, padding: '4px 10px', borderRadius: 8, background: 'var(--color-cyan-light)', color: 'var(--color-teal-dark)' }}>
-              Version {version}
-            </span>
           </div>
 
         </div>
       </header>
 
-      {/* OPTIMISTIC CONCURRENCY / ERROR WARNING BOX */}
-      {errorMessage && (
-        <div style={{ background: '#FEF2F2', borderBottom: '1px solid #FCA5A5', padding: '10px 24px', textAlign: 'center', fontSize: '0.85rem', fontWeight: 700, color: '#991B1B', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
-          <AlertCircle size={16} />
-          <span>{errorMessage}</span>
-        </div>
-      )}
-
-      {/* MAIN SCROLLABLE RESUME EDITOR CANVAS */}
-      <main style={{ maxWidth: 900, margin: '32px auto', padding: '0 24px' }}>
+      {/* SPLITSCREEN MAIN BODY (EDITOR LEFT + LIVE PREVIEW RIGHT) */}
+      <main style={{ maxWidth: 1440, margin: '24px auto', padding: '0 20px', overflowX: 'hidden' }}>
         
-        {/* SECTION 1: PERSONAL INFORMATION */}
-        <PersonalInfo data={resumeData.personalInfo} onChange={updatePersonalInfo} />
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', gap: 24, alignItems: 'start' }}>
+          
+          {/* LEFT COLUMN: RESUME EDITOR SECTIONS */}
+          <div style={{ display: activeTab === 'edit' ? 'flex' : 'none', flexDirection: 'column', gap: 20 }} className="desktop-show">
+            <PersonalInfo data={dataToRender.personalInfo} onChange={updatePersonalInfo} />
+            <Summary data={dataToRender.summary} onChange={updateSummary} />
+            <Experience items={dataToRender.experience} data={dataToRender.experience} onChange={updateExperience} />
+            <Education items={dataToRender.education} data={dataToRender.education} onChange={updateEducation} />
+            <Projects items={dataToRender.projects} data={dataToRender.projects} onChange={updateProjects} />
+            <Skills items={dataToRender.skills} data={dataToRender.skills} onChange={updateSkills} fullResumeContent={dataToRender} />
+            <Certifications items={dataToRender.certifications} data={dataToRender.certifications} onChange={updateCertifications} />
+            <Achievements items={dataToRender.achievements} data={dataToRender.achievements} onChange={updateAchievements} />
+            <Languages items={dataToRender.languages} data={dataToRender.languages} onChange={updateLanguages} />
+            <Links items={dataToRender.links} data={dataToRender.links} onChange={updateLinks} />
+          </div>
 
-        {/* SECTION 2: EXECUTIVE SUMMARY */}
-        <Summary summary={resumeData.summary} onChange={updateSummary} />
+          {/* RIGHT COLUMN: STICKY LIVE RESUME PREVIEW SHEET */}
+            <LiveResumePreviewSheet 
+              data={dataToRender} 
+              onUpdateContent={(updated) => setResumeData && setResumeData(updated as any)} 
+            />
 
-        {/* SECTION 3: EDUCATION */}
-        <Education items={resumeData.education} onChange={updateEducation} />
-
-        {/* SECTION 4: EXPERIENCE */}
-        <Experience items={resumeData.experience} onChange={updateExperience} />
-
-        {/* SECTION 5: PROJECTS */}
-        <Projects items={resumeData.projects} onChange={updateProjects} />
-
-        {/* SECTION 6: SKILLS */}
-        <Skills items={resumeData.skills} onChange={updateSkills} />
-
-        {/* SECTION 7: CERTIFICATIONS */}
-        <Certifications items={resumeData.certifications} onChange={updateCertifications} />
-
-        {/* SECTION 8: ACHIEVEMENTS */}
-        <Achievements items={resumeData.achievements} onChange={updateAchievements} />
-
-        {/* SECTION 9: LANGUAGES */}
-        <Languages items={resumeData.languages} onChange={updateLanguages} />
-
-        {/* SECTION 10: LINKS */}
-        <Links items={resumeData.links} onChange={updateLinks} />
+        </div>
 
       </main>
+
+      {/* EXPORT MODAL */}
+      <ResumeExportModal
+        isOpen={isExportModalOpen}
+        onClose={() => setIsExportModalOpen(false)}
+        userId={userId}
+        resumeId={resumeId}
+        resumeTitle={resumeTitle}
+        version={version}
+        data={dataToRender}
+      />
 
     </div>
   );
 };
+
+export default ResumeStudio;

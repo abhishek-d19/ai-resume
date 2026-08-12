@@ -11,59 +11,75 @@ import {
   Zap, 
   Layers, 
   Award,
-  ArrowLeft
+  ArrowLeft,
+  ArrowRight,
+  TrendingUp,
+  FileCheck,
+  Check,
+  User,
+  FileText,
+  GraduationCap,
+  Briefcase,
+  Code,
+  Cpu,
+  Trophy,
+  Globe,
+  BarChart3,
+  Target,
+  MessageSquare
 } from 'lucide-react';
 
-export default function ResumeAnalysisDashboardView({ resumeId, onBack }) {
+import { resumeAnalysisServiceInstance } from '../services/ResumeAnalysisService';
+
+export default function ResumeAnalysisDashboardView({ resumeId = 'res-1', userId, onBack, onNext }) {
   const [loading, setLoading] = useState(true);
   const [analyzing, setAnalyzing] = useState(false);
   const [error, setError] = useState(null);
   const [data, setData] = useState(null);
   const [expandedRecs, setExpandedRecs] = useState({});
+  const [showTechDetails, setShowTechDetails] = useState(false);
+  const [statusStep, setStatusStep] = useState('Evaluating content...');
 
   useEffect(() => {
     fetchAnalysis();
-  }, [resumeId]);
+  }, [resumeId, userId]);
 
   const fetchAnalysis = async () => {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(`/api/resumes/${resumeId || 'demo'}/analyze`);
-      const json = await res.json();
-
-      if (json.success && json.data) {
-        setData(json.data);
-      } else {
-        // Fallback to sample data for preview/demonstration if no live DB analysis exists yet
-        setData(getSampleAnalysis());
+      let analysisData = await resumeAnalysisServiceInstance.getLatestAnalysis(userId, resumeId);
+      if (!analysisData) {
+        const result = await resumeAnalysisServiceInstance.analyzeResume(userId, resumeId, undefined, false);
+        analysisData = result.analysis;
       }
+      setData(analysisData);
     } catch (err) {
-      console.warn('Using sample analysis data fallback:', err);
-      setData(getSampleAnalysis());
+      console.error('[ResumeAnalysisService Error]:', err.message);
+      setError(err.message || 'Failed to load resume analysis');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleRunAnalysis = async () => {
+  const handleRunAnalysis = async (forceReRun = true) => {
+    if (analyzing) return;
     setAnalyzing(true);
     setError(null);
+    setStatusStep('Extracting resume content...');
+
+    const t1 = setTimeout(() => setStatusStep('Evaluating content & metrics...'), 1200);
+    const t2 = setTimeout(() => setStatusStep('Building intelligence report...'), 2800);
+
     try {
-      const res = await fetch(`/api/resumes/${resumeId || 'demo'}/analyze`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: 'mock-user-1' })
-      });
-      const json = await res.json();
-      if (json.success && json.data) {
-        setData(json.data);
-      } else {
-        throw new Error(json.error || 'Failed to generate fresh analysis');
-      }
+      const result = await resumeAnalysisServiceInstance.analyzeResume(userId, resumeId, undefined, forceReRun);
+      setData(result.analysis);
     } catch (err) {
+      console.error('[ResumeAnalysisService Generate Error]:', err.message);
       setError(err.message || 'Analysis generation failed.');
     } finally {
+      clearTimeout(t1);
+      clearTimeout(t2);
       setAnalyzing(false);
     }
   };
@@ -73,362 +89,321 @@ export default function ResumeAnalysisDashboardView({ resumeId, onBack }) {
   };
 
   if (loading) {
-    return <AnalysisSkeletonLoading onBack={onBack} />;
+    return <AnalysisLoadingExperience onBack={onBack} statusStep="Loading stored analysis..." />;
   }
 
   if (error && !data) {
+    const isBillingError = error.includes('AI_BILLING_LIMIT_REACHED');
+    const isRateLimit = error.includes('AI_RATE_LIMITED');
+    const isTimeout = error.includes('AI_TIMEOUT');
+
+    const displayMsg = isBillingError
+      ? 'AI analysis is temporarily unavailable because the AI service has reached its usage limit. Please try again later.'
+      : isRateLimit
+      ? 'Too many analysis requests were made. Please wait a moment and try again.'
+      : isTimeout
+      ? 'The AI analysis request timed out. Please try again.'
+      : error;
+
     return (
-      <div className="p-8 max-w-4xl mx-auto text-center">
-        <AlertTriangle className="w-12 h-12 text-amber-400 mx-auto mb-4" />
-        <h2 className="text-xl font-bold text-white mb-2">Analysis Failed to Load</h2>
-        <p className="text-slate-400 mb-6">{error}</p>
-        <button 
-          onClick={fetchAnalysis}
-          className="px-6 py-2.5 rounded-full bg-[#38E8F5] text-[#032D30] font-semibold hover:opacity-90 transition"
-        >
-          Try Again
-        </button>
-      </div>
+      <main style={{ minHeight: '100vh', background: '#F8FAFC', color: '#0F172A', padding: '40px 20px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'sans-serif' }}>
+        <div style={{ background: '#FFFFFF', border: '1px solid #E2E8F0', borderRadius: 20, padding: 36, maxWidth: 560, width: '100%', textAlign: 'left', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
+          <div style={{ width: 48, height: 48, borderRadius: 14, background: '#FEF2F2', border: '1px solid #FCA5A5', color: '#DC2626', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}>
+            <AlertTriangle size={24} />
+          </div>
+          
+          <h2 style={{ fontSize: '1.3rem', fontWeight: 800, color: '#0F172A', marginBottom: 6 }}>
+            {isBillingError ? 'AI Usage Limit Reached' : isRateLimit ? 'Rate Limit Exceeded' : 'Analysis Failed'}
+          </h2>
+          <p style={{ fontSize: '0.88rem', color: '#64748B', marginBottom: 16, lineHeight: 1.5 }}>
+            {displayMsg}
+          </p>
+
+          <div style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 12, padding: 16, marginBottom: 20, fontSize: '0.82rem', fontFamily: 'monospace' }}>
+            <div style={{ marginBottom: 6 }}><strong>Pipeline Stage:</strong> {isBillingError ? 'PROVIDER_BILLING_CHECK' : 'AI_PROVIDER_EXECUTION'}</div>
+            <div style={{ marginBottom: 6 }}><strong>Resume ID:</strong> {resumeId}</div>
+            <div style={{ marginBottom: 6 }}><strong>Provider:</strong> OpenAI</div>
+            <div style={{ marginBottom: 6 }}><strong>Model:</strong> gpt-4o-mini</div>
+          </div>
+
+          <div style={{ marginBottom: 20 }}>
+            <button
+              onClick={() => setShowTechDetails(!showTechDetails)}
+              style={{ background: 'none', border: 'none', color: '#0284C7', fontSize: '0.82rem', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, padding: 0 }}
+            >
+              {showTechDetails ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+              {showTechDetails ? 'Hide technical details' : 'View technical details'}
+            </button>
+
+            {showTechDetails && (
+              <div style={{ marginTop: 10, background: '#0F172A', color: '#38BDF8', padding: 14, borderRadius: 10, fontSize: '0.75rem', fontFamily: 'monospace', overflowX: 'auto', maxHeight: 180 }}>
+                {JSON.stringify({
+                  errorCode: isBillingError ? 'AI_BILLING_LIMIT_REACHED' : isRateLimit ? 'AI_RATE_LIMITED' : 'AI_PROVIDER_ERROR',
+                  message: error,
+                  resumeId,
+                  provider: 'openai',
+                  model: 'gpt-4o-mini',
+                  stage: 'AI_EXECUTION'
+                }, null, 2)}
+              </div>
+            )}
+          </div>
+
+          <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
+            {onBack && (
+              <button 
+                onClick={onBack}
+                style={{ padding: '10px 20px', borderRadius: 12, background: '#F1F5F9', border: '1px solid #CBD5E1', color: '#475569', fontWeight: 700, fontSize: '0.88rem', cursor: 'pointer' }}
+              >
+                Back to Resume
+              </button>
+            )}
+            <button 
+              onClick={() => handleRunAnalysis(true)}
+              disabled={analyzing}
+              style={{ padding: '10px 24px', borderRadius: 12, background: '#0284C7', color: '#FFFFFF', fontWeight: 800, fontSize: '0.88rem', border: 'none', cursor: 'pointer', opacity: analyzing ? 0.6 : 1 }}
+            >
+              {analyzing ? 'Analyzing...' : 'Retry Analysis'}
+            </button>
+          </div>
+        </div>
+      </main>
     );
   }
 
-  const analysis = data || getSampleAnalysis();
-  const overallScore = analysis.overallScore || 85;
+  if (!data) {
+    return (
+      <main style={{ minHeight: '100vh', background: '#F8FAFC', color: '#0F172A', padding: '40px 20px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'sans-serif' }}>
+        <div style={{ background: '#FFFFFF', border: '1px solid #E2E8F0', borderRadius: 20, padding: 36, maxWidth: 480, width: '100%', textAlign: 'center', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
+          <div style={{ width: 56, height: 56, borderRadius: 16, background: '#F0F9FF', border: '1px solid #BAE6FD', color: '#0284C7', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px auto' }}>
+            <Sparkles size={28} />
+          </div>
+          <h2 style={{ fontSize: '1.4rem', fontWeight: 800, color: '#0F172A', marginBottom: 8 }}>No Analysis Available</h2>
+          <p style={{ fontSize: '0.88rem', color: '#64748B', marginBottom: 24, lineHeight: 1.5 }}>
+            {analyzing ? statusStep : "Run Lumina AI's deep resume intelligence scan to generate your executive audit report."}
+          </p>
+          <button 
+            onClick={() => handleRunAnalysis(true)}
+            disabled={analyzing}
+            style={{ padding: '12px 28px', borderRadius: 12, background: '#0284C7', color: '#FFFFFF', fontWeight: 800, fontSize: '0.9rem', border: 'none', cursor: 'pointer', opacity: analyzing ? 0.6 : 1 }}
+          >
+            {analyzing ? 'Analyzing Resume...' : 'Generate Analysis'}
+          </button>
+        </div>
+      </main>
+    );
+  }
+
+  const analysis = data;
+  const overallScore = analysis.overallScore || 0;
   const atsScore = analysis.atsScore || Math.round(overallScore * 0.94);
   const sectionScores = analysis.sectionScores || {};
 
   return (
-    <div className="min-h-screen bg-[#032D30] text-slate-100 p-4 md:p-8 font-sans selection:bg-[#38E8F5] selection:text-[#032D30]">
-      <div className="max-w-5xl mx-auto space-y-8">
-        
-        {/* Navigation & Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800/80 pb-6">
-          <div className="flex items-center gap-3">
-            {onBack && (
-              <button 
-                onClick={onBack}
-                className="p-2 rounded-full bg-slate-900/60 border border-slate-800 text-slate-400 hover:text-white hover:border-[#38E8F5]/40 transition"
-              >
-                <ArrowLeft className="w-5 h-5" />
-              </button>
-            )}
-            <div>
-              <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-white flex items-center gap-2">
-                Resume Intelligence Audit <Sparkles className="w-5 h-5 text-[#38E8F5]" />
-              </h1>
-              <p className="text-sm text-slate-400">Deep AI score breakdown, ATS compliance, and executive recommendations</p>
-            </div>
+    <div style={{ minHeight: '100vh', background: '#F8FAFC', color: '#0F172A', fontFamily: 'Inter, system-ui, sans-serif' }}>
+      {/* Top Header */}
+      <header style={{ background: '#FFFFFF', borderBottom: '1px solid #E2E8F0', padding: '16px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', sticky: 'top', top: 0, zIndex: 30 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+          {onBack && (
+            <button 
+              onClick={onBack}
+              style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#F1F5F9', border: 'none', padding: '8px 14px', borderRadius: 10, color: '#475569', fontWeight: 600, fontSize: '0.85rem', cursor: 'pointer' }}
+            >
+              <ArrowLeft size={16} /> Back
+            </button>
+          )}
+          <div>
+            <h1 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#0F172A', display: 'flex', alignItems: 'center', gap: 8 }}>
+              Resume Intelligence Audit <Sparkles size={20} color="#0284C7" />
+            </h1>
+            <p style={{ fontSize: '0.8rem', color: '#64748B', margin: 0 }}>Executive Career Copilot • Candidate Quality Audit</p>
           </div>
+        </div>
 
-          <button
-            onClick={handleRunAnalysis}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <button 
+            onClick={() => handleRunAnalysis(true)}
             disabled={analyzing}
-            className="flex items-center justify-center gap-2 px-5 py-2.5 rounded-full bg-[#38E8F5] text-[#032D30] font-semibold hover:shadow-lg hover:shadow-[#38E8F5]/20 disabled:opacity-50 transition"
+            style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#F0F9FF', border: '1px solid #BAE6FD', color: '#0284C7', padding: '8px 16px', borderRadius: 10, fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer', opacity: analyzing ? 0.6 : 1 }}
           >
-            <RefreshCw className={`w-4 h-4 ${analyzing ? 'animate-spin' : ''}`} />
-            {analyzing ? 'Re-auditing...' : 'Re-Run Audit'}
+            <RefreshCw size={14} className={analyzing ? 'animate-spin' : ''} />
+            {analyzing ? statusStep : 'Re-Run Audit'}
           </button>
+
+          {onNext && (
+            <button 
+              onClick={onNext}
+              style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#0284C7', color: '#FFFFFF', border: 'none', padding: '8px 18px', borderRadius: 10, fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer' }}
+            >
+              Next Step <ArrowRight size={16} />
+            </button>
+          )}
         </div>
+      </header>
 
-        {/* Top Cards: Overall Score & ATS Score */}
-        <div className="grid grid-[#032D30] md:grid-cols-2 gap-6">
-          
-          {/* Overall Score Card */}
-          <div className="p-6 rounded-2xl bg-slate-900/60 border border-slate-800 backdrop-blur-md hover:border-[#38E8F5]/30 transition shadow-xl relative overflow-hidden group">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-[#38E8F5]/5 rounded-full blur-3xl group-hover:bg-[#38E8F5]/10 transition" />
-            <div className="flex items-center justify-between mb-4">
-              <span className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
-                <Award className="w-4 h-4 text-[#38E8F5]" /> Overall Quality Score
-              </span>
-              <ScoreTierBadge score={overallScore} />
+      <div style={{ maxWidth: 1200, margin: '0 auto', padding: '32px 24px 60px 24px' }}>
+        {/* Overall Score Header */}
+        <div style={{ background: '#FFFFFF', border: '1px solid #E2E8F0', borderRadius: 20, padding: 28, marginBottom: 28, boxShadow: '0 2px 8px rgba(0,0,0,0.04)', display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 24, alignItems: 'center' }}>
+          {/* Overall Score */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 20, borderRight: '1px solid #E2E8F0', paddingRight: 24 }}>
+            <div style={{ width: 84, height: 84, borderRadius: '50%', background: overallScore >= 75 ? '#F0FDF4' : overallScore >= 50 ? '#FEFCE8' : '#FEF2F2', border: `3px solid ${overallScore >= 75 ? '#22C55E' : overallScore >= 50 ? '#EAB308' : '#EF4444'}`, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+              <span style={{ fontSize: '1.8rem', fontWeight: 900, color: overallScore >= 75 ? '#15803D' : overallScore >= 50 ? '#A16207' : '#B91C1C', lineHeight: 1 }}>{overallScore}</span>
+              <span style={{ fontSize: '0.65rem', fontWeight: 700, color: '#64748B', textTransform: 'uppercase' }}>/ 100</span>
             </div>
-
-            <div className="flex items-baseline gap-4 my-2">
-              <span className="text-5xl md:text-6xl font-extrabold text-white tracking-tight">
-                {overallScore}
-              </span>
-              <span className="text-lg text-slate-500 font-medium">/ 100</span>
+            <div>
+              <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#0284C7', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Overall Score</span>
+              <h3 style={{ fontSize: '1.2rem', fontWeight: 800, color: '#0F172A', margin: '2px 0 4px 0' }}>
+                {overallScore >= 80 ? 'Strong Candidate' : overallScore >= 60 ? 'Competitive Tier' : overallScore >= 40 ? 'Moderate Impact' : 'Needs Optimization'}
+              </h3>
+              <p style={{ fontSize: '0.8rem', color: '#64748B', margin: 0, lineHeight: 1.4 }}>
+                {analysis.executiveSummary || 'Executive audit complete.'}
+              </p>
             </div>
-
-            <div className="w-full bg-slate-800/80 rounded-full h-3 overflow-hidden mt-4">
-              <div 
-                className="h-full bg-gradient-to-r from-[#38E8F5] to-emerald-400 transition-all duration-1000 ease-out" 
-                style={{ width: `${overallScore}%` }}
-              />
-            </div>
-            <p className="text-xs text-slate-400 mt-3">Evaluated against executive hiring algorithms and industry standards.</p>
           </div>
 
-          {/* ATS Score Card */}
-          <div className="p-6 rounded-2xl bg-slate-900/60 border border-slate-800 backdrop-blur-md hover:border-[#38E8F5]/30 transition shadow-xl relative overflow-hidden group">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-cyan-500/5 rounded-full blur-3xl group-hover:bg-cyan-500/10 transition" />
-            <div className="flex items-center justify-between mb-4">
-              <span className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
-                <ShieldCheck className="w-4 h-4 text-cyan-400" /> ATS Compliance Index
-              </span>
-              <span className="text-xs px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-cyan-300 font-semibold">
-                Parseability High
-              </span>
+          {/* ATS Score */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 20, borderRight: '1px solid #E2E8F0', paddingRight: 24 }}>
+            <div style={{ width: 84, height: 84, borderRadius: 20, background: '#F0F9FF', border: '1px solid #BAE6FD', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+              <span style={{ fontSize: '1.8rem', fontWeight: 900, color: '#0284C7', lineHeight: 1 }}>{atsScore}%</span>
+              <span style={{ fontSize: '0.65rem', fontWeight: 700, color: '#0369A1', textTransform: 'uppercase' }}>ATS Match</span>
             </div>
-
-            <div className="flex items-baseline gap-4 my-2">
-              <span className="text-5xl md:text-6xl font-extrabold text-cyan-300 tracking-tight">
-                {atsScore}
-              </span>
-              <span className="text-lg text-slate-500 font-medium">% Match</span>
+            <div>
+              <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#0284C7', textTransform: 'uppercase', letterSpacing: '0.05em' }}>ATS Parseability</span>
+              <h3 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#0F172A', margin: '2px 0 4px 0' }}>
+                {atsScore >= 80 ? 'ATS Compatible' : 'Parseable with Gaps'}
+              </h3>
+              <p style={{ fontSize: '0.8rem', color: '#64748B', margin: 0, lineHeight: 1.4 }}>
+                Standard header hierarchy and clean machine readability.
+              </p>
             </div>
-
-            <div className="w-full bg-slate-800/80 rounded-full h-3 overflow-hidden mt-4">
-              <div 
-                className="h-full bg-gradient-to-r from-cyan-400 to-[#38E8F5] transition-all duration-1000 ease-out" 
-                style={{ width: `${atsScore}%` }}
-              />
-            </div>
-            <p className="text-xs text-slate-400 mt-3">Machine parseability score across standard ATS algorithms (Greenhouse, Lever, Workday).</p>
           </div>
 
-        </div>
-
-        {/* Executive Summary */}
-        <div className="p-6 rounded-2xl bg-gradient-to-br from-slate-900/90 to-[#032D30] border border-slate-800 shadow-xl relative">
-          <div className="flex items-center gap-2 mb-3">
-            <Sparkles className="w-5 h-5 text-[#38E8F5]" />
-            <h2 className="text-lg font-bold text-white tracking-tight">Executive Summary</h2>
-          </div>
-          <p className="text-slate-300 leading-relaxed text-sm md:text-base font-normal">
-            {analysis.executiveSummary || analysis.summary || "The candidate presents a strong technical baseline with high accomplishment clarity. Keyword density for core engineering stack elements is well-aligned with senior level expectations. To maximize executive recruiter impact, enrich metric density in project bullets and address section hierarchy minor deficits."}
-          </p>
-        </div>
-
-        {/* Section Scores Grid */}
-        <div className="p-6 rounded-2xl bg-slate-900/60 border border-slate-800 backdrop-blur-md shadow-xl">
-          <h2 className="text-lg font-bold text-white tracking-tight mb-4 flex items-center gap-2">
-            <Layers className="w-5 h-5 text-[#38E8F5]" /> Section Scores Breakdown
-          </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {Object.entries(sectionScores).map(([key, score]) => (
-              <div key={key} className="p-3.5 rounded-xl bg-slate-950/40 border border-slate-800/70">
-                <div className="flex justify-between items-center text-xs mb-2">
-                  <span className="font-semibold text-slate-300 capitalize">
-                    {key.replace(/([A-Z])/g, ' $1')}
-                  </span>
-                  <span className="font-mono font-bold text-[#38E8F5]">{score}/100</span>
-                </div>
-                <div className="w-full bg-slate-800 rounded-full h-2 overflow-hidden">
-                  <div 
-                    className="h-full bg-[#38E8F5] transition-all duration-500" 
-                    style={{ width: `${score}%` }} 
-                  />
-                </div>
-              </div>
-            ))}
+          {/* Quick Metrics */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.82rem' }}>
+              <span style={{ color: '#64748B', fontWeight: 600 }}>Identified Strengths</span>
+              <span style={{ fontWeight: 800, color: '#15803D' }}>{analysis.strengths?.length || 0} Highlights</span>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.82rem' }}>
+              <span style={{ color: '#64748B', fontWeight: 600 }}>Areas for Growth</span>
+              <span style={{ fontWeight: 800, color: '#B91C1C' }}>{analysis.weaknesses?.length || 0} Flags</span>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.82rem' }}>
+              <span style={{ color: '#64748B', fontWeight: 600 }}>Actionable Recommendations</span>
+              <span style={{ fontWeight: 800, color: '#0284C7' }}>{analysis.recommendations?.length || 0} Actions</span>
+            </div>
           </div>
         </div>
 
-        {/* Strengths & Weaknesses Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          
-          {/* Strengths */}
-          <div className="p-6 rounded-2xl bg-slate-900/60 border border-emerald-500/20 shadow-xl">
-            <h3 className="text-md font-bold text-emerald-400 mb-4 flex items-center gap-2">
-              <CheckCircle className="w-5 h-5 text-emerald-400" /> Key Candidate Strengths
-            </h3>
-            <ul className="space-y-2.5">
-              {(analysis.strengths || ['High metric density in bullet points', 'Strong technical stack keywords', 'Clear career progression']).map((item, idx) => (
-                <li key={idx} className="flex items-start gap-2.5 text-xs md:text-sm text-slate-300">
-                  <span className="text-emerald-400 font-bold mt-0.5">•</span>
-                  <span>{item}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* Weaknesses */}
-          <div className="p-6 rounded-2xl bg-slate-900/60 border border-amber-500/20 shadow-xl">
-            <h3 className="text-md font-bold text-amber-400 mb-4 flex items-center gap-2">
-              <AlertTriangle className="w-5 h-5 text-amber-400" /> Areas for Improvement
-            </h3>
-            <ul className="space-y-2.5">
-              {(analysis.weaknesses || ['Vague action verbs in project descriptions', 'Missing github portfolio link', 'Summary statement lacks target role alignment']).map((item, idx) => (
-                <li key={idx} className="flex items-start gap-2.5 text-xs md:text-sm text-slate-300">
-                  <span className="text-amber-400 font-bold mt-0.5">•</span>
-                  <span>{item}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-        </div>
-
-        {/* Critical Issues & Quick Wins */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          
-          {/* Critical Issues */}
-          <div className="p-6 rounded-2xl bg-slate-900/60 border border-rose-500/20 shadow-xl">
-            <h3 className="text-md font-bold text-rose-400 mb-4 flex items-center gap-2">
-              <XCircle className="w-5 h-5 text-rose-400" /> Critical Issues
-            </h3>
-            {(!analysis.criticalIssues || analysis.criticalIssues.length === 0) ? (
-              <p className="text-xs text-slate-400 italic">No critical blocking issues detected.</p>
-            ) : (
-              <ul className="space-y-2.5">
-                {analysis.criticalIssues.map((issue, idx) => (
-                  <li key={idx} className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-xs text-rose-200">
-                    {issue}
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-
-          {/* Quick Wins */}
-          <div className="p-6 rounded-2xl bg-slate-900/60 border border-cyan-500/20 shadow-xl">
-            <h3 className="text-md font-bold text-cyan-400 mb-4 flex items-center gap-2">
-              <Zap className="w-5 h-5 text-cyan-400" /> High-Impact Quick Wins
-            </h3>
-            <ul className="space-y-2.5">
-              {(analysis.quickWins || ['Add quantified metrics to 2 experience bullets', 'Place core technical skills at the top', 'Standardize employment date formats']).map((win, idx) => (
-                <li key={idx} className="p-3 rounded-xl bg-cyan-500/10 border border-cyan-500/20 text-xs text-cyan-200 flex items-center gap-2">
-                  <Zap className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
-                  <span>{win}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-        </div>
-
-        {/* Expandable Recommendations */}
-        <div className="p-6 rounded-2xl bg-slate-900/60 border border-slate-800 shadow-xl">
-          <h3 className="text-md font-bold text-white mb-4">Actionable Recommendations</h3>
-          <div className="space-y-3">
-            {(analysis.recommendations || [
-              'Enrich metric density: Replace generic phrases with percentage gains, latency improvements, or scale metrics.',
-              'Optimize ATS taxonomy: Ensure standard section headers (Experience, Education, Skills) are utilized.',
-              'Strengthen summary statement: Explicitly mention target job title and key core competencies in the top 3 lines.'
-            ]).map((rec, idx) => {
-              const isExpanded = expandedRecs[idx];
-              return (
-                <div 
-                  key={idx} 
-                  className="rounded-xl bg-slate-950/40 border border-slate-800/80 overflow-hidden transition"
-                >
-                  <button
-                    onClick={() => toggleRecommendation(idx)}
-                    className="w-full p-4 text-left flex items-center justify-between text-xs md:text-sm font-semibold text-slate-200 hover:text-white transition"
-                  >
-                    <span>{idx + 1}. {rec.split(':')[0]}</span>
-                    {isExpanded ? <ChevronUp className="w-4 h-4 text-slate-400" /> : <ChevronDown className="w-4 h-4 text-slate-400" />}
-                  </button>
-                  {isExpanded && (
-                    <div className="p-4 pt-0 border-t border-slate-900 text-xs text-slate-400 leading-relaxed">
-                      {rec}
+        {/* Breakdown Grid */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>
+          {/* Left Column: Strengths & Weaknesses */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+            <div style={{ background: '#FFFFFF', border: '1px solid #E2E8F0', borderRadius: 20, padding: 24 }}>
+              <h4 style={{ fontSize: '1.05rem', fontWeight: 800, color: '#0F172A', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
+                <CheckCircle size={18} color="#16A34A" /> Key Strengths Identified
+              </h4>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                {analysis.strengths && analysis.strengths.length > 0 ? (
+                  analysis.strengths.map((str, idx) => (
+                    <div key={idx} style={{ background: '#F0FDF4', border: '1px solid #DCFCE7', borderRadius: 12, padding: 14, fontSize: '0.85rem', color: '#166534', fontWeight: 600, display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+                      <Check size={16} style={{ marginTop: 2, flexShrink: 0 }} />
+                      <span>{str}</span>
                     </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </div>
+                  ))
+                ) : (
+                  <p style={{ fontSize: '0.85rem', color: '#64748B' }}>No major strengths identified.</p>
+                )}
+              </div>
+            </div>
 
-        {/* Missing Sections & ATS Warnings */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          
-          {/* Missing Sections */}
-          <div className="p-5 rounded-2xl bg-slate-950/60 border border-dashed border-slate-800">
-            <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Missing Mandatory Sections</h4>
-            {(!analysis.missingSections || analysis.missingSections.length === 0) ? (
-              <p className="text-xs text-emerald-400 font-medium">✓ All essential sections present.</p>
-            ) : (
-              <div className="flex flex-wrap gap-2 mt-2">
-                {analysis.missingSections.map((sec, idx) => (
-                  <span key={idx} className="px-3 py-1 rounded-full bg-slate-800 border border-slate-700 text-xs text-slate-300">
-                    {sec}
-                  </span>
+            <div style={{ background: '#FFFFFF', border: '1px solid #E2E8F0', borderRadius: 20, padding: 24 }}>
+              <h4 style={{ fontSize: '1.05rem', fontWeight: 800, color: '#0F172A', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
+                <AlertTriangle size={18} color="#DC2626" /> Critical Areas for Improvement
+              </h4>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                {analysis.weaknesses && analysis.weaknesses.length > 0 ? (
+                  analysis.weaknesses.map((weak, idx) => (
+                    <div key={idx} style={{ background: '#FEF2F2', border: '1px solid #FEE2E2', borderRadius: 12, padding: 14, fontSize: '0.85rem', color: '#991B1B', fontWeight: 600, display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+                      <AlertTriangle size={16} style={{ marginTop: 2, flexShrink: 0 }} />
+                      <span>{weak}</span>
+                    </div>
+                  ))
+                ) : (
+                  <p style={{ fontSize: '0.85rem', color: '#64748B' }}>No major weaknesses detected.</p>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Right Column: Recommendations & Section Breakdown */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+            <div style={{ background: '#FFFFFF', border: '1px solid #E2E8F0', borderRadius: 20, padding: 24 }}>
+              <h4 style={{ fontSize: '1.05rem', fontWeight: 800, color: '#0F172A', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
+                <Zap size={18} color="#0284C7" /> Strategic Recommendations
+              </h4>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                {analysis.recommendations && analysis.recommendations.length > 0 ? (
+                  analysis.recommendations.map((rec, idx) => (
+                    <div key={idx} style={{ background: '#F0F9FF', border: '1px solid #BAE6FD', borderRadius: 12, padding: 14, fontSize: '0.85rem', color: '#0369A1', fontWeight: 600 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer' }} onClick={() => toggleRecommendation(idx)}>
+                        <span>{rec}</span>
+                        {expandedRecs[idx] ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                      </div>
+                      {expandedRecs[idx] && (
+                        <p style={{ marginTop: 8, paddingTop: 8, borderTop: '1px solid #E0F2FE', fontSize: '0.8rem', color: '#0284C7', fontWeight: 400 }}>
+                          Updating this section improves ATS match score and executive recruiter scanability.
+                        </p>
+                      )}
+                    </div>
+                  ))
+                ) : (
+                  <p style={{ fontSize: '0.85rem', color: '#64748B' }}>No recommendations provided.</p>
+                )}
+              </div>
+            </div>
+
+            <div style={{ background: '#FFFFFF', border: '1px solid #E2E8F0', borderRadius: 20, padding: 24 }}>
+              <h4 style={{ fontSize: '1.05rem', fontWeight: 800, color: '#0F172A', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
+                <Layers size={18} color="#6366F1" /> Section Score Breakdown
+              </h4>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                {Object.entries(sectionScores).map(([key, score]) => (
+                  <div key={key} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px', background: '#F8FAFC', borderRadius: 10 }}>
+                    <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#334155', textTransform: 'capitalize' }}>
+                      {key.replace(/([A-Z])/g, ' $1')}
+                    </span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                      <div style={{ width: 120, height: 6, background: '#E2E8F0', borderRadius: 3, overflow: 'hidden' }}>
+                        <div style={{ width: `${score}%`, height: '100%', background: score >= 75 ? '#22C55E' : score >= 50 ? '#EAB308' : '#EF4444', borderRadius: 3 }} />
+                      </div>
+                      <span style={{ fontSize: '0.85rem', fontWeight: 800, color: score >= 75 ? '#15803D' : score >= 50 ? '#A16207' : '#B91C1C', width: 36, textAlign: 'right' }}>
+                        {score}
+                      </span>
+                    </div>
+                  </div>
                 ))}
               </div>
-            )}
+            </div>
           </div>
-
-          {/* ATS Warnings */}
-          <div className="p-5 rounded-2xl bg-amber-500/5 border border-dashed border-amber-500/20">
-            <h4 className="text-xs font-bold uppercase tracking-wider text-amber-400 mb-2">ATS Formatting Warnings</h4>
-            {(!analysis.atsWarnings || analysis.atsWarnings.length === 0) ? (
-              <p className="text-xs text-emerald-400 font-medium">✓ Zero formatting risks detected.</p>
-            ) : (
-              <ul className="space-y-1.5 text-xs text-amber-200/80">
-                {analysis.atsWarnings.map((warn, idx) => (
-                  <li key={idx}>• {warn}</li>
-                ))}
-              </ul>
-            )}
-          </div>
-
         </div>
-
       </div>
     </div>
   );
 }
 
-function ScoreTierBadge({ score }) {
-  if (score >= 90) return <span className="px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-bold">Executive Tier</span>;
-  if (score >= 75) return <span className="px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 text-xs font-bold">Competitive Tier</span>;
-  return <span className="px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400 text-xs font-bold">Needs Optimization</span>;
-}
-
-function AnalysisSkeletonLoading({ onBack }) {
+function AnalysisLoadingExperience({ onBack, statusStep }) {
   return (
-    <div className="min-h-screen bg-[#032D30] text-slate-100 p-8 max-w-5xl mx-auto space-y-8 animate-pulse font-sans">
-      <div className="h-8 w-64 bg-slate-800 rounded-lg" />
-      <div className="grid grid-cols-2 gap-6">
-        <div className="h-44 bg-slate-900 rounded-2xl border border-slate-800" />
-        <div className="h-44 bg-slate-900 rounded-2xl border border-slate-800" />
+    <main style={{ minHeight: '100vh', background: '#F8FAFC', color: '#0F172A', padding: '40px 20px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'sans-serif' }}>
+      <div style={{ background: '#FFFFFF', border: '1px solid #E2E8F0', borderRadius: 20, padding: 40, maxWidth: 480, width: '100%', textAlign: 'center', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
+        <div style={{ width: 64, height: 64, borderRadius: 20, background: '#F0F9FF', border: '1px solid #BAE6FD', color: '#0284C7', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px auto' }}>
+          <RefreshCw size={32} className="animate-spin" />
+        </div>
+        <h2 style={{ fontSize: '1.3rem', fontWeight: 800, color: '#0F172A', marginBottom: 8 }}>Analyzing Resume Intelligence</h2>
+        <p style={{ fontSize: '0.88rem', color: '#64748B', marginBottom: 20, lineHeight: 1.5 }}>
+          {statusStep || 'Lumina AI is scanning header structure, keyword density, quantified experience metrics, and ATS compatibility...'}
+        </p>
       </div>
-      <div className="h-28 bg-slate-900 rounded-2xl border border-slate-800" />
-      <div className="h-48 bg-slate-900 rounded-2xl border border-slate-800" />
-    </div>
+    </main>
   );
-}
-
-function getSampleAnalysis() {
-  return {
-    overallScore: 88,
-    atsScore: 92,
-    sectionScores: {
-      personalInfo: 95,
-      summary: 80,
-      education: 90,
-      experience: 88,
-      projects: 85,
-      skills: 92,
-      certifications: 80,
-      achievements: 85,
-      languages: 100
-    },
-    executiveSummary: "The candidate demonstrates exceptional technical baseline and engineering leadership. High metric density is evident across experience bullets. Recommended adjustments include placing key tech skills closer to the top and sharpening target role alignment in the summary.",
-    strengths: [
-      "High metric density (percentage gains, scale numbers) across experience bullet points.",
-      "Clean ATS section hierarchy and standardized headers.",
-      "Diverse technical skill coverage aligned with Senior Staff Software Engineer standards."
-    ],
-    weaknesses: [
-      "Summary statement lacks explicit target role alignment.",
-      "Project descriptions could include more architectural impact metrics."
-    ],
-    criticalIssues: [],
-    quickWins: [
-      "Add target role title directly into the professional summary header.",
-      "Re-order skills section to feature high-demand frameworks at the very top."
-    ],
-    recommendations: [
-      "Quantify project outcomes: Include latency reduction, throughput, or revenue metrics for secondary projects.",
-      "Optimize section header titles: Use standard terms like 'Professional Experience' and 'Education'.",
-      "Include GitHub / Portfolio URL: Provide verified code artifact links in personal info."
-    ],
-    missingSections: [],
-    atsWarnings: [
-      "Ensure table-less formatting when rendering final PDF output."
-    ]
-  };
 }

@@ -8,7 +8,7 @@ export async function POST(
   try {
     const { id } = await params;
     const body = await request.json().catch(() => ({}));
-    const userId = body.userId || 'mock-user-1';
+    const userId = body.userId || '';
     const targetRole = body.targetRole;
 
     const result = await resumeAnalysisServiceInstance.analyzeResume(userId, id, targetRole);
@@ -36,7 +36,7 @@ export async function GET(
   try {
     const { id } = await params;
     const { searchParams } = new URL(request.url);
-    const userId = searchParams.get('userId') || 'mock-user-1';
+    const userId = searchParams.get('userId') || '';
     const isHistoryRequested = searchParams.get('history') === 'true';
 
     if (isHistoryRequested) {

@@ -3,6 +3,7 @@ import Navbar from './components/Navbar';
 import AuthScreen from './components/AuthScreen';
 import HeroSection from './components/HeroSection';
 import ResumeStudioWorkspace from './components/ResumeStudioWorkspace';
+import ResumeAnalysisDashboardView from './components/ResumeAnalysisDashboardView';
 import HiringPanelExperience from './components/HiringPanelExperience';
 import JDMatchEngine from './components/JDMatchEngine';
 import NotificationSystem from './components/NotificationSystem';
@@ -19,18 +20,41 @@ import ProductUserFlowStepper from './components/ProductUserFlowStepper';
 import CommandPaletteModal from './components/CommandPaletteModal';
 import KeyboardShortcutsFooterBar from './components/KeyboardShortcutsFooterBar';
 import AuthenticatedAppShell from './components/AuthenticatedAppShell';
+import ResumeDashboardView from './components/ResumeDashboardView';
+import { useAuth } from './hooks/useAuth';
+import { Loader2 } from 'lucide-react';
 
 import './index.css';
 import './styles/components.css';
 
-import ResumeDashboardView from './components/ResumeDashboardView';
-
 export default function App() {
+  const { user, session, loading, isAuthenticated, signOut } = useAuth();
   const [currentView, setCurrentView] = useState('landing');
+  const [activeResumeId, setActiveResumeId] = useState(null);
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
   const [globalToast, setGlobalToast] = useState(null);
 
-  const navigateToView = (viewName) => {
+  // Sync currentView when auth state resolves
+  useEffect(() => {
+    if (!loading) {
+      if (isAuthenticated) {
+        if (currentView === 'landing' || currentView === 'auth') {
+          setCurrentView('dashboard');
+        }
+      } else {
+        if (currentView !== 'landing' && currentView !== 'auth') {
+          setCurrentView('landing');
+        }
+      }
+    }
+  }, [isAuthenticated, loading]);
+
+  const navigateToView = (viewName, resumeId) => {
+    if (resumeId) setActiveResumeId(resumeId);
+    if (!isAuthenticated && viewName !== 'landing' && viewName !== 'auth') {
+      setCurrentView('auth');
+      return;
+    }
     setCurrentView(viewName);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -70,22 +94,73 @@ export default function App() {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []);
+  }, [isAuthenticated]);
 
-  const isAuthenticatedView = currentView !== 'landing' && currentView !== 'auth';
+  if (loading) {
+    return (
+      <div style={{ minHeight: '100vh', background: '#032D30', color: '#38E8F5', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'sans-serif' }}>
+        <div style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
+          <Loader2 size={36} className="animate-spin" />
+          <span style={{ fontSize: '0.9rem', fontWeight: 700, letterSpacing: '0.5px' }}>Restoring Session...</span>
+        </div>
+      </div>
+    );
+  }
+
+  const activeUserId = user?.id;
+  const activeUserName = user?.user_metadata?.full_name || user?.user_metadata?.name || user?.email?.split('@')[0] || 'Candidate';
+  const isProtectedView = isAuthenticated && Boolean(activeUserId) && currentView !== 'landing' && currentView !== 'auth';
+
+  const handleSignOut = async () => {
+    await signOut();
+    setCurrentView('landing');
+  };
 
   const renderAuthenticatedContent = () => {
     switch (currentView) {
       case 'dashboard':
-        return <ResumeDashboardView onNavigateToStudio={(id) => navigateToView('studio')} />;
+        return (
+          <ResumeDashboardView 
+            userId={activeUserId} 
+            userName={activeUserName} 
+            onNavigateToStudio={(id) => navigateToView('studio', id)} 
+          />
+        );
       case 'studio':
-        return <ResumeStudioWorkspace />;
+        return (
+          <ResumeStudioWorkspace 
+            resumeId={activeResumeId} 
+            userId={activeUserId} 
+            onNavigateToDashboard={() => navigateToView('dashboard')} 
+            onNavigateToAnalysis={(id) => navigateToView('analysis', id)}
+          />
+        );
       case 'analysis':
-        return <ResumeStudioWorkspace />;
+        return (
+          <ResumeAnalysisDashboardView 
+            resumeId={activeResumeId} 
+            userId={activeUserId} 
+            onBack={() => navigateToView('studio', activeResumeId)} 
+            onNext={() => navigateToView('panel', activeResumeId)}
+          />
+        );
       case 'panel':
-        return <HiringPanelExperience />;
+        return (
+          <HiringPanelExperience 
+            resumeId={activeResumeId} 
+            userId={activeUserId} 
+            onNavigateToJdMatch={(id) => navigateToView('jdmatch', id)}
+            onNavigateToStudio={() => navigateToView('studio', activeResumeId)}
+          />
+        );
       case 'jdmatch':
-        return <JDMatchEngine />;
+        return (
+          <JDMatchEngine 
+            resumeId={activeResumeId} 
+            userId={activeUserId} 
+            onNavigateToStudio={() => navigateToView('studio', activeResumeId)}
+          />
+        );
       case 'journey':
         return <ResourceCards />;
       case 'settings':
@@ -100,22 +175,30 @@ export default function App() {
             <div style={{ background: '#FFFFFF', padding: 24, borderRadius: 20, border: '1px solid #E2E8F0', display: 'flex', flexDirection: 'column', gap: 16 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div>
-                  <div style={{ fontWeight: 800, color: 'var(--color-teal-dark)' }}>AI Panel Rigor Level</div>
-                  <div style={{ fontSize: '0.8rem', color: '#64748B' }}>Strict executive review mode enabled</div>
+                  <div style={{ fontWeight: 800, color: 'var(--color-teal-dark)' }}>Signed In User</div>
+                  <div style={{ fontSize: '0.8rem', color: '#64748B' }}>{user?.email}</div>
                 </div>
                 <span style={{ background: 'var(--color-cyan-light)', color: 'var(--color-teal-dark)', padding: '4px 12px', borderRadius: 8, fontWeight: 800, fontSize: '0.8rem' }}>
-                  Strict (Google / Stripe Bar)
+                  {activeUserName}
                 </span>
               </div>
               <hr style={{ border: 'none', borderTop: '1px solid #F1F5F9' }} />
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div>
                   <div style={{ fontWeight: 800, color: 'var(--color-teal-dark)' }}>Automatic Cloud Sync</div>
-                  <div style={{ fontSize: '0.8rem', color: '#64748B' }}>Sync version history on edit</div>
+                  <div style={{ fontSize: '0.8rem', color: '#64748B' }}>Supabase PostgreSQL RLS Active</div>
                 </div>
                 <span style={{ background: '#DCFCE7', color: '#15803D', padding: '4px 12px', borderRadius: 8, fontWeight: 800, fontSize: '0.8rem' }}>
-                  Enabled
+                  Active Session
                 </span>
+              </div>
+              <div style={{ paddingTop: 12 }}>
+                <button
+                  onClick={handleSignOut}
+                  style={{ background: '#EF4444', color: '#FFFFFF', border: 'none', padding: '10px 20px', borderRadius: 12, fontWeight: 800, fontSize: '0.85rem', cursor: 'pointer' }}
+                >
+                  Sign Out of Lumina AI
+                </button>
               </div>
             </div>
           </div>
@@ -136,17 +219,23 @@ export default function App() {
       )}
 
       {/* RENDER AUTHENTICATED DESKTOP SAAS SHELL OR UNAUTHENTICATED MARKETING LANDING */}
-      {isAuthenticatedView ? (
+      {isProtectedView ? (
         <AuthenticatedAppShell
           currentView={currentView}
           onNavigate={navigateToView}
           onOpenCommandPalette={() => setIsCommandPaletteOpen(true)}
+          onSignOut={handleSignOut}
         >
           {renderAuthenticatedContent()}
         </AuthenticatedAppShell>
       ) : (
         <>
-          <Navbar currentView={currentView} navigateToView={navigateToView} />
+          <Navbar 
+            currentView={currentView} 
+            navigateToView={navigateToView} 
+            isAuthenticated={isAuthenticated}
+            onSignOut={handleSignOut}
+          />
 
           <main>
             {currentView === 'landing' && (
@@ -168,7 +257,10 @@ export default function App() {
             )}
 
             {currentView === 'auth' && (
-              <AuthScreen navigateToView={navigateToView} />
+              <AuthScreen 
+                navigateToView={navigateToView} 
+                onAuthSuccess={() => navigateToView('dashboard')}
+              />
             )}
           </main>
 

@@ -1,5 +1,15 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
+const getEnv = (key: string) => {
+  if (typeof process !== 'undefined' && process && process.env) {
+    return process.env[key];
+  }
+  if (typeof import.meta !== 'undefined' && import.meta && (import.meta as any).env) {
+    return (import.meta as any).env[key];
+  }
+  return undefined;
+};
+
 /**
  * Validates admin environment variables.
  * CRITICAL SECURITY GUARD: Throws runtime error if executed on client browser environment.
@@ -11,14 +21,8 @@ function getAdminEnv() {
     );
   }
 
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL || (typeof import.meta !== 'undefined' && import.meta.env?.VITE_SUPABASE_URL);
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-  if (!url) {
-    throw new Error(
-      '[Supabase Infrastructure Error]: NEXT_PUBLIC_SUPABASE_URL is missing. Please define it in server environment settings.'
-    );
-  }
+  const url = getEnv('NEXT_PUBLIC_SUPABASE_URL') || getEnv('SUPABASE_URL') || getEnv('VITE_SUPABASE_URL') || 'https://cxaaxiygfidsmigoefos.supabase.co';
+  const serviceRoleKey = getEnv('SUPABASE_SERVICE_ROLE_KEY') || process.env.SUPABASE_SERVICE_ROLE_KEY;
 
   if (!serviceRoleKey) {
     throw new Error(

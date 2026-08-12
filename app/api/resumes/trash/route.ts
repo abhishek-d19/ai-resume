@@ -4,7 +4,7 @@ import { resumeServiceInstance } from '../../../../src/services/ResumeService';
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
-    const userId = searchParams.get('userId') || 'mock-user-1';
+    const userId = searchParams.get('userId') || '';
 
     const trashedResumes = await resumeServiceInstance.listTrashedResumesForUser(userId);
 

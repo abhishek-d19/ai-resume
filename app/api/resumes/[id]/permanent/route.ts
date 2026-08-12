@@ -8,7 +8,7 @@ export async function DELETE(
   try {
     const { id } = await params;
     const { searchParams } = new URL(request.url);
-    const userId = searchParams.get('userId') || 'mock-user-1';
+    const userId = searchParams.get('userId') || '';
 
     await resumeServiceInstance.permanentlyDeleteResume(userId, id);
 

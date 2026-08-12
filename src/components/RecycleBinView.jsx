@@ -4,7 +4,7 @@ import EmptyState from './EmptyState';
 import { Modal } from './ui/Modal';
 import { resumeServiceInstance } from '../services/ResumeService';
 
-export default function RecycleBinView({ userId = 'mock-user-1', onBackToDashboard }) {
+export default function RecycleBinView({ userId, onBackToDashboard }) {
   const [trashedResumes, setTrashedResumes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);

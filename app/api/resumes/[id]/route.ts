@@ -5,7 +5,7 @@ import { updateResumeSchema } from '../../../../src/lib/validations/resume';
 function getAuthenticatedUserId(req: Request): string {
   const authHeader = req.headers.get('x-user-id') || req.headers.get('authorization');
   if (!authHeader) {
-    return 'mock-user-1';
+    return '';
   }
   return authHeader.replace('Bearer ', '').trim();
 }

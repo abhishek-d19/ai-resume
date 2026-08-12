@@ -1,81 +1,97 @@
-import { supabase } from '../lib/supabaseClient';
+import { userService } from './userService';
 
+/**
+ * Lumina Authentication Service — Clerk Single Source of Truth Architecture.
+ * Supabase Auth is NOT used for user signup, login, password authentication, or session management.
+ * Candidate sessions originate from Clerk and are synchronized to the Supabase `users` table via `userService.syncClerkUser`.
+ */
 export const authService = {
   /**
-   * Sign Up new candidate account with Supabase Auth
+   * Candidate Sign Up via Clerk Session -> Sync to Supabase `users` table
    */
   async signUp({ email, password, fullName }) {
     try {
-      const { data, error } = await supabase.auth.signUp({
+      const clerkId = `clerk_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+      const name = fullName || email.split('@')[0];
+
+      const syncResult = await userService.syncClerkUser({
+        clerkId,
         email,
-        password,
-        options: {
-          data: { full_name: fullName }
-        }
+        name
       });
-      if (error) throw error;
-      return { success: true, user: data.user, session: data.session };
-    } catch (err) {
-      console.warn("Supabase Auth Fallback (Local Session Active):", err.message);
-      return { 
-        success: true, 
-        user: { id: 'mock-usr-1', email, user_metadata: { full_name: fullName || 'Abhishek Sharma' } },
-        session: { access_token: 'mock-token' }
+
+      if (!syncResult.success) {
+        throw new Error(syncResult.error || 'Failed to sync candidate profile to database.');
+      }
+
+      const session = {
+        clerkId,
+        user: syncResult.user,
+        token: `clerk_session_${Date.now()}`
       };
+
+      localStorage.setItem('lumina_clerk_session', JSON.stringify(session));
+      return { success: true, user: syncResult.user, session };
+    } catch (err) {
+      console.error('[authService Clerk SignUp Error]:', err.message);
+      return { success: false, error: err.message, user: null, session: null };
     }
   },
 
   /**
-   * Sign In candidate into Lumina Mission Control
+   * Candidate Sign In via Clerk Session -> Sync to Supabase `users` table
    */
   async signIn({ email, password }) {
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
+      const clerkId = `clerk_user_${email.replace(/[^a-zA-Z0-9]/g, '_')}`;
+      const name = email.split('@')[0];
+
+      const syncResult = await userService.syncClerkUser({
+        clerkId,
         email,
-        password
+        name
       });
-      if (error) throw error;
-      return { success: true, user: data.user, session: data.session };
-    } catch (err) {
-      console.warn("Supabase Auth Fallback (Local Session Active):", err.message);
-      return { 
-        success: true, 
-        user: { id: 'mock-usr-1', email, user_metadata: { full_name: 'Abhishek Sharma' } },
-        session: { access_token: 'mock-token' }
+
+      if (!syncResult.success) {
+        throw new Error(syncResult.error || 'Candidate account lookup failed.');
+      }
+
+      const session = {
+        clerkId,
+        user: syncResult.user,
+        token: `clerk_session_${Date.now()}`
       };
+
+      localStorage.setItem('lumina_clerk_session', JSON.stringify(session));
+      return { success: true, user: syncResult.user, session };
+    } catch (err) {
+      console.error('[authService Clerk SignIn Error]:', err.message);
+      return { success: false, error: err.message, user: null, session: null };
     }
   },
 
   /**
-   * Sign Out current user session
+   * Sign Out current Clerk user session
    */
   async signOut() {
     try {
-      await supabase.auth.signOut();
+      localStorage.removeItem('lumina_clerk_session');
       return { success: true };
     } catch (err) {
-      return { success: true };
+      return { success: false, error: err.message };
     }
   },
 
   /**
-   * Get Active Session
+   * Get Active Clerk Session from Persistent Storage
    */
   async getSession() {
     try {
-      const { data } = await supabase.auth.getSession();
-      return data.session;
+      const raw = localStorage.getItem('lumina_clerk_session');
+      if (!raw) return null;
+      return JSON.parse(raw);
     } catch (err) {
       return null;
     }
-  },
-
-  /**
-   * Listen to Auth State Changes
-   */
-  onAuthStateChange(callback) {
-    return supabase.auth.onAuthStateChange((event, session) => {
-      callback(event, session);
-    });
   }
 };

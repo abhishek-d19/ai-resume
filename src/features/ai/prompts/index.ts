@@ -15,4 +15,6 @@ export * from './hiring-committee-consensus';
 export * from './interview-question-generation';
 export * from './resume-improvement-engine';
 export * from './resume-rewrite';
+export * from './resume-parser-engine';
+export * from './resume-normalization';
 export * from './rewrite';

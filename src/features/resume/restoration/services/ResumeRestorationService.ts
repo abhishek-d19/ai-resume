@@ -1,96 +1,43 @@
-import { resumeServiceInstance, NotFoundError, ForbiddenError } from '../../../../services/ResumeService';
-import { RestorationResult } from '../types/restoration';
 import { CanonicalResumeSchema } from '../../editor/components/ResumeStudio';
+import { resumeServiceInstance, NotFoundError } from '../../../../services/ResumeService';
+
+export interface RestorationResult {
+  title: string;
+  version: number;
+  updated_at: string;
+  deleted_at: string | null;
+  data: CanonicalResumeSchema;
+}
 
 export class ResumeRestorationService {
   /**
-   * Default Fallback Schema ensuring zero undefined field crashes
+   * Returns canonical ATS-ready resume schema empty defaults.
+   * Stored values default to empty strings/arrays so placeholders do NOT persist fake data.
    */
   public static getDefaultSchema(): CanonicalResumeSchema {
     return {
       personalInfo: {
-        fullName: 'Abhishek Sharma',
-        headline: 'Senior Software Engineer & Design Systems Architect',
-        email: 'abhishek@example.com',
-        phone: '+1 (555) 234-5678',
-        location: 'San Francisco, CA'
+        fullName: '',
+        headline: '',
+        email: '',
+        phone: '',
+        location: ''
       },
-      summary: 'Senior Engineer specializing in design systems, micro-frontends, and performance optimization with 6+ years of enterprise experience.',
-      education: [
-        {
-          id: 'edu-1',
-          institution: 'University of California, Berkeley',
-          degree: 'Bachelor of Science',
-          fieldOfStudy: 'Computer Science',
-          startDate: '2016',
-          endDate: '2020'
-        }
-      ],
-      experience: [
-        {
-          id: 'exp-1',
-          company: 'Lumina AI',
-          role: 'Senior Frontend Engineer',
-          location: 'San Francisco, CA',
-          startDate: '2024',
-          endDate: 'Present',
-          bullets: [
-            'Architected distributed multi-tenant design system scaling across 14 enterprise web applications, reducing bundle size by 35%.',
-            'Engineered real-time AI prompt transformation engine, reducing TTI by 42% for 300,000+ active enterprise users.',
-            'Led cross-functional team of 6 engineers to launch automated token pipeline directly into GitHub CI/CD.'
-          ]
-        }
-      ],
-      projects: [
-        {
-          id: 'proj-1',
-          name: 'Tokens Studio Infrastructure',
-          description: 'Multi-platform design token extraction and distribution engine.',
-          techStack: 'TypeScript, React, Vite, Node.js'
-        }
-      ],
-      skills: [
-        {
-          id: 'skill-1',
-          category: 'Frontend & Systems Architecture',
-          skillsList: 'React 19, TypeScript, Next.js, WebGL, Design Systems, State Machines'
-        },
-        {
-          id: 'skill-2',
-          category: 'Backend & Cloud Infrastructure',
-          skillsList: 'Node.js, PostgreSQL, Supabase, GraphQL, Docker, Redis'
-        }
-      ],
-      certifications: [
-        {
-          id: 'cert-1',
-          name: 'AWS Certified Solutions Architect – Professional',
-          issuer: 'Amazon Web Services',
-          issueDate: '2024'
-        }
-      ],
-      achievements: [
-        {
-          id: 'ach-1',
-          title: 'Global Engineering Innovation Award',
-          description: 'Recognized for building automated design token extraction pipeline.',
-          date: '2024'
-        }
-      ],
-      languages: [
-        { id: 'lang-1', language: 'English', proficiency: 'Native / Fluent' },
-        { id: 'lang-2', language: 'German', proficiency: 'Professional Working' }
-      ],
-      links: [
-        { id: 'link-1', platform: 'Portfolio', url: 'https://abhishek.dev' },
-        { id: 'link-2', platform: 'GitHub', url: 'https://github.com/abhishek' },
-        { id: 'link-3', platform: 'LinkedIn', url: 'https://linkedin.com/in/abhishek' }
-      ]
+      summary: '',
+      education: [],
+      experience: [],
+      projects: [],
+      skills: [],
+      certifications: [],
+      achievements: [],
+      languages: [],
+      links: []
     };
   }
 
   /**
    * Sanitizes and validates canonical JSON payload to prevent corrupted state crashes
+   * Preserves real extracted candidate data from PDF parsing or user input.
    */
   public static sanitizeResumeContent(rawContent: any): CanonicalResumeSchema {
     const defaultSchema = this.getDefaultSchema();
@@ -98,17 +45,104 @@ export class ResumeRestorationService {
       return defaultSchema;
     }
 
+    const pi = rawContent.personalInfo || rawContent.basics || {};
+    const personalInfo = {
+      fullName: pi.fullName || pi.name || pi.full_name || '',
+      headline: pi.headline || pi.title || pi.label || pi.role || '',
+      email: pi.email || '',
+      phone: pi.phone || pi.phone_number || pi.phoneNumber || '',
+      location: pi.location || pi.address || pi.city || ''
+    };
+
+    const summaryText = typeof rawContent.summary === 'string'
+      ? rawContent.summary
+      : (typeof rawContent.objective === 'string' ? rawContent.objective : '');
+
+    const rawEdu = Array.isArray(rawContent.education) ? rawContent.education : [];
+    const sanitizedEdu = rawEdu.map((edu: any, idx: number) => ({
+      id: edu?.id || `edu-${idx}-${Date.now()}`,
+      institution: edu?.institution || edu?.school || edu?.university || '',
+      degree: edu?.degree || edu?.qualification || '',
+      fieldOfStudy: edu?.fieldOfStudy || edu?.field || edu?.major || '',
+      startDate: edu?.startDate || edu?.start_date || '',
+      endDate: edu?.endDate || edu?.end_date || '',
+      gpa: edu?.gpa || ''
+    }));
+
+    const rawExp = Array.isArray(rawContent.experience) ? rawContent.experience : (Array.isArray(rawContent.work) ? rawContent.work : []);
+    const sanitizedExp = rawExp.map((exp: any, idx: number) => ({
+      id: exp?.id || `exp-${idx}-${Date.now()}`,
+      company: exp?.company || exp?.organization || exp?.employer || '',
+      role: exp?.role || exp?.position || exp?.title || exp?.jobTitle || '',
+      location: exp?.location || '',
+      startDate: exp?.startDate || exp?.start_date || '',
+      endDate: exp?.endDate || exp?.end_date || '',
+      isCurrent: Boolean(exp?.isCurrent || exp?.is_current),
+      bullets: Array.isArray(exp?.bullets)
+        ? exp.bullets
+        : (Array.isArray(exp?.highlights)
+            ? exp.highlights
+            : (typeof exp?.description === 'string' && exp.description ? [exp.description] : ['']))
+    }));
+
+    const rawProj = Array.isArray(rawContent.projects) ? rawContent.projects : [];
+    const sanitizedProj = rawProj.map((proj: any, idx: number) => ({
+      id: proj?.id || `proj-${idx}-${Date.now()}`,
+      name: proj?.name || proj?.title || '',
+      description: proj?.description || proj?.summary || '',
+      techStack: proj?.techStack || proj?.technologies || proj?.keywords ? (Array.isArray(proj.keywords) ? proj.keywords.join(', ') : String(proj.keywords || '')) : '',
+      bullets: Array.isArray(proj?.bullets) ? proj.bullets : (Array.isArray(proj?.highlights) ? proj.highlights : [])
+    }));
+
+    const rawSkills = Array.isArray(rawContent.skills) ? rawContent.skills : [];
+    const sanitizedSkills = rawSkills.map((sk: any, idx: number) => ({
+      id: sk?.id || `skill-${idx}-${Date.now()}`,
+      category: sk?.category || sk?.name || 'Skills',
+      skills: typeof sk?.skills === 'string'
+        ? sk.skills
+        : (Array.isArray(sk?.skills) ? sk.skills.join(', ') : (Array.isArray(sk?.keywords) ? sk.keywords.join(', ') : ''))
+    }));
+
+    const rawCerts = Array.isArray(rawContent.certifications) ? rawContent.certifications : (Array.isArray(rawContent.certificates) ? rawContent.certificates : []);
+    const sanitizedCerts = rawCerts.map((cert: any, idx: number) => ({
+      id: cert?.id || `cert-${idx}-${Date.now()}`,
+      name: cert?.name || cert?.title || '',
+      issuer: cert?.issuer || cert?.authority || '',
+      date: cert?.date || cert?.issueDate || ''
+    }));
+
+    const rawAchieve = Array.isArray(rawContent.achievements) ? rawContent.achievements : (Array.isArray(rawContent.awards) ? rawContent.awards : []);
+    const sanitizedAchieve = rawAchieve.map((ach: any, idx: number) => ({
+      id: ach?.id || `ach-${idx}-${Date.now()}`,
+      title: ach?.title || ach?.name || '',
+      description: ach?.description || ach?.summary || ''
+    }));
+
+    const rawLang = Array.isArray(rawContent.languages) ? rawContent.languages : [];
+    const sanitizedLang = rawLang.map((lang: any, idx: number) => ({
+      id: lang?.id || `lang-${idx}-${Date.now()}`,
+      language: lang?.language || lang?.name || '',
+      proficiency: lang?.proficiency || lang?.fluency || ''
+    }));
+
+    const rawLinks = Array.isArray(rawContent.links) ? rawContent.links : (Array.isArray(rawContent.profiles) ? rawContent.profiles : []);
+    const sanitizedLinks = rawLinks.map((lk: any, idx: number) => ({
+      id: lk?.id || `link-${idx}-${Date.now()}`,
+      label: lk?.label || lk?.network || lk?.name || '',
+      url: lk?.url || lk?.link || ''
+    }));
+
     return {
-      personalInfo: { ...defaultSchema.personalInfo, ...(rawContent.personalInfo || rawContent.basics || {}) },
-      summary: typeof rawContent.summary === 'string' ? rawContent.summary : defaultSchema.summary,
-      education: Array.isArray(rawContent.education) ? rawContent.education : defaultSchema.education,
-      experience: Array.isArray(rawContent.experience) ? rawContent.experience : defaultSchema.experience,
-      projects: Array.isArray(rawContent.projects) ? rawContent.projects : defaultSchema.projects,
-      skills: Array.isArray(rawContent.skills) ? rawContent.skills : defaultSchema.skills,
-      certifications: Array.isArray(rawContent.certifications) ? rawContent.certifications : defaultSchema.certifications,
-      achievements: Array.isArray(rawContent.achievements) ? rawContent.achievements : defaultSchema.achievements,
-      languages: Array.isArray(rawContent.languages) ? rawContent.languages : defaultSchema.languages,
-      links: Array.isArray(rawContent.links) ? rawContent.links : defaultSchema.links
+      personalInfo,
+      summary: summaryText,
+      education: sanitizedEdu,
+      experience: sanitizedExp,
+      projects: sanitizedProj,
+      skills: sanitizedSkills,
+      certifications: sanitizedCerts,
+      achievements: sanitizedAchieve,
+      languages: sanitizedLang,
+      links: sanitizedLinks
     };
   }
 

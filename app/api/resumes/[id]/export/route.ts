@@ -8,7 +8,7 @@ export async function GET(
   try {
     const { id } = await params;
     const { searchParams } = new URL(request.url);
-    const userId = searchParams.get('userId') || 'mock-user-1';
+    const userId = searchParams.get('userId') || '';
     const template = (searchParams.get('template') as PdfTemplateType) || 'ats';
     const format = searchParams.get('format') || 'html';
 

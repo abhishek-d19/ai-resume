@@ -18,6 +18,7 @@ import {
 
 import ResumeDashboardView from './ResumeDashboardView';
 import ResumeAnalysisDashboardView from './ResumeAnalysisDashboardView';
+import { resumeExportServiceInstance } from '../services/ResumeExportService';
 import JdMatchDashboardView from './JdMatchDashboardView';
 import HiringCommitteeDashboardView from './HiringCommitteeDashboardView';
 
@@ -318,30 +319,44 @@ function DemoImprovementsView({ onNext }) {
 }
 
 // 10. DEMO EXPORT VIEW
-function DemoExportView({ resumeId }) {
+function DemoExportView({ userId, resumeId = 'res-1' }) {
+  const [exporting, setExporting] = useState(false);
+
+  const handleExport = async (template) => {
+    setExporting(true);
+    try {
+      const html = await resumeExportServiceInstance.generateResumeHtml(userId, resumeId, { template });
+      const blob = new Blob([html], { type: 'text/html' });
+      const url = URL.createObjectURL(blob);
+      window.open(url, '_blank');
+    } catch (err) {
+      console.error('[ResumeExportService Error]:', err.message);
+    } finally {
+      setExporting(false);
+    }
+  };
+
   return (
-    <div className="p-8 max-w-4xl mx-auto text-center space-y-6">
+    <div className="p-8 max-w-4xl mx-auto text-center space-y-6 font-sans">
       <div className="p-8 rounded-3xl bg-slate-900/80 border border-slate-800 space-y-4">
         <Download className="w-12 h-12 text-[#38E8F5] mx-auto" />
         <h2 className="text-2xl font-bold text-white">Export PDF Resume</h2>
         <p className="text-xs text-slate-400">Select export template for print & download</p>
         <div className="flex justify-center gap-3 pt-2">
-          <a 
-            href={`/api/resumes/${resumeId || 'demo'}/export?template=ats&format=html`}
-            target="_blank"
-            rel="noreferrer"
+          <button 
+            onClick={() => handleExport('ats')}
+            disabled={exporting}
             className="px-6 py-2.5 rounded-full bg-[#38E8F5] text-[#032D30] font-bold text-xs hover:shadow-lg transition"
           >
             Export ATS PDF
-          </a>
-          <a 
-            href={`/api/resumes/${resumeId || 'demo'}/export?template=modern&format=html`}
-            target="_blank"
-            rel="noreferrer"
+          </button>
+          <button 
+            onClick={() => handleExport('modern')}
+            disabled={exporting}
             className="px-6 py-2.5 rounded-full bg-slate-800 text-white font-bold text-xs border border-slate-700 hover:border-[#38E8F5]/40 transition"
           >
             Export Modern PDF
-          </a>
+          </button>
         </div>
       </div>
     </div>

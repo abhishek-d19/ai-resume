@@ -19,7 +19,8 @@ export default function AuthenticatedAppShell({
   currentView = 'dashboard', 
   onNavigate, 
   children,
-  onOpenCommandPalette 
+  onOpenCommandPalette,
+  onSignOut
 }) {
   const [showNotificationsDropdown, setShowNotificationsDropdown] = useState(false);
   const [showAiAssistantDrawer, setShowAiAssistantDrawer] = useState(false);
@@ -197,12 +198,33 @@ export default function AuthenticatedAppShell({
               <span>AI Assistant</span>
             </button>
 
-            {/* User Avatar */}
-            <div 
-              onClick={() => onNavigate('settings')} 
-              style={{ width: 36, height: 36, borderRadius: '50%', background: 'var(--color-teal-dark)', color: '#38E8F5', fontWeight: 900, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.85rem', border: '2px solid #38E8F5', cursor: 'pointer' }}
-            >
-              AS
+            {/* User Avatar & Logout */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <div 
+                onClick={() => onNavigate('settings')} 
+                title="Account Settings"
+                style={{ width: 36, height: 36, borderRadius: '50%', background: 'var(--color-teal-dark)', color: '#38E8F5', fontWeight: 900, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.85rem', border: '2px solid #38E8F5', cursor: 'pointer' }}
+              >
+                AS
+              </div>
+              {onSignOut && (
+                <button
+                  onClick={onSignOut}
+                  title="Sign Out"
+                  style={{
+                    background: '#F1F5F9',
+                    color: '#64748B',
+                    border: 'none',
+                    borderRadius: 10,
+                    padding: '6px 12px',
+                    fontSize: '0.78rem',
+                    fontWeight: 700,
+                    cursor: 'pointer'
+                  }}
+                >
+                  Sign Out
+                </button>
+              )}
             </div>
 
           </div>

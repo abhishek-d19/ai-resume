@@ -2,56 +2,44 @@ import { useState, useEffect } from 'react';
 import { authService } from '../services/authService';
 import { userService } from '../services/userService';
 
+/**
+ * Custom React Hook for Lumina Candidate Authentication.
+ * Single Source of Truth: Clerk Signup/Login -> Sync to Supabase `users` table -> Dashboard.
+ * Supabase Auth is NOT used for user auth or session management.
+ */
 export function useAuth() {
   const [user, setUser] = useState(null);
   const [session, setSession] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  const handleSyncUser = async (authUser) => {
-    if (!authUser) return;
-    const clerkId = authUser.id || authUser.user_metadata?.sub || 'clerk_usr_default';
-    const email = authUser.email || authUser.user_metadata?.email || 'candidate@example.com';
-    const name = authUser.user_metadata?.full_name || authUser.user_metadata?.name || 'Abhishek Sharma';
-
-    await userService.syncClerkUser({ clerkId, email, name });
-  };
-
   useEffect(() => {
-    // Check initial session
+    // Check initial Clerk active session
     authService.getSession().then(async (activeSession) => {
-      if (activeSession) {
+      if (activeSession && activeSession.user) {
         setSession(activeSession);
         setUser(activeSession.user);
-        await handleSyncUser(activeSession.user);
+
+        // Ensure latest profile is synced to Supabase users table
+        await userService.syncClerkUser({
+          clerkId: activeSession.clerkId || activeSession.user.clerk_id || activeSession.user.id,
+          email: activeSession.user.email,
+          name: activeSession.user.name || activeSession.user.email.split('@')[0]
+        });
+      } else {
+        setSession(null);
+        setUser(null);
       }
       setLoading(false);
     });
-
-    // Subscribe to Auth state updates
-    const { data: authListener } = authService.onAuthStateChange(async (event, newSession) => {
-      setSession(newSession);
-      setUser(newSession?.user || null);
-      if (newSession?.user) {
-        await handleSyncUser(newSession.user);
-      }
-      setLoading(false);
-    });
-
-    return () => {
-      if (authListener?.subscription) {
-        authListener.subscription.unsubscribe();
-      }
-    };
   }, []);
 
   const signUp = async (credentials) => {
     setLoading(true);
     const res = await authService.signUp(credentials);
-    if (res.user) {
+    if (res.success && res.user) {
       setUser(res.user);
-      await handleSyncUser(res.user);
+      setSession(res.session);
     }
-    if (res.session) setSession(res.session);
     setLoading(false);
     return res;
   };
@@ -59,11 +47,10 @@ export function useAuth() {
   const signIn = async (credentials) => {
     setLoading(true);
     const res = await authService.signIn(credentials);
-    if (res.user) {
+    if (res.success && res.user) {
       setUser(res.user);
-      await handleSyncUser(res.user);
+      setSession(res.session);
     }
-    if (res.session) setSession(res.session);
     setLoading(false);
     return res;
   };
@@ -80,7 +67,7 @@ export function useAuth() {
     user,
     session,
     loading,
-    isAuthenticated: !!user || true,
+    isAuthenticated: Boolean(user && session),
     signUp,
     signIn,
     signOut

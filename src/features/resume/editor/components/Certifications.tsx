@@ -7,41 +7,44 @@ export interface CertificationItem {
   id: string;
   name: string;
   issuer: string;
-  issueDate?: string;
+  date: string;
 }
 
 export interface CertificationsProps {
-  items: CertificationItem[];
+  items?: CertificationItem[];
+  data?: CertificationItem[];
   onChange: (updated: CertificationItem[]) => void;
 }
 
-export const Certifications: React.FC<CertificationsProps> = ({ items, onChange }) => {
+export const Certifications: React.FC<CertificationsProps> = ({ items, data, onChange }) => {
+  const safeItems = Array.isArray(items) ? items : (Array.isArray(data) ? data : []);
+
   const handleAddItem = () => {
     const newItem: CertificationItem = {
       id: `cert-${Date.now()}`,
       name: '',
       issuer: '',
-      issueDate: ''
+      date: ''
     };
-    onChange([...items, newItem]);
+    onChange([...safeItems, newItem]);
   };
 
   const handleDeleteItem = (id: string) => {
-    onChange(items.filter(item => item.id !== id));
+    onChange(safeItems.filter(item => item.id !== id));
   };
 
   const handleItemChange = (id: string, field: keyof CertificationItem, value: string) => {
-    onChange(items.map(item => item.id === id ? { ...item, [field]: value } : item));
+    onChange(safeItems.map(item => item.id === id ? { ...item, [field]: value } : item));
   };
 
   return (
     <SectionCard>
       <SectionHeader title="Certifications" icon={<Award size={18} />} onAddItem={handleAddItem} addItemLabel="Add Certification" />
 
-      {items.map((item) => (
+      {safeItems.map((item) => (
         <div key={item.id} style={{ background: '#F8FAFC', padding: 16, borderRadius: 14, border: '1px solid #E2E8F0', marginBottom: 12 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-            <span style={{ fontSize: '0.78rem', fontWeight: 800, color: 'var(--color-teal-dark)', textTransform: 'uppercase' }}>Certificate</span>
+            <span style={{ fontSize: '0.78rem', fontWeight: 800, color: 'var(--color-teal-dark)', textTransform: 'uppercase' }}>Certification</span>
             <button
               onClick={() => handleDeleteItem(item.id)}
               aria-label="Delete Certification"
@@ -51,27 +54,27 @@ export const Certifications: React.FC<CertificationsProps> = ({ items, onChange 
             </button>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 120px', gap: 12 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
             <input
               type="text"
-              value={item.name}
+              value={item.name || ''}
               onChange={(e) => handleItemChange(item.id, 'name', e.target.value)}
-              placeholder="Certificate Title"
-              style={{ padding: '8px 12px', borderRadius: 8, border: '1px solid #CBD5E1', fontWeight: 700, fontSize: '0.88rem' }}
+              placeholder="Certification Title (e.g. AWS Solutions Architect)"
+              style={{ padding: '8px 12px', borderRadius: 8, border: '1px solid #CBD5E1', outline: 'none', fontSize: '0.88rem', fontWeight: 700 }}
             />
             <input
               type="text"
-              value={item.issuer}
+              value={item.issuer || ''}
               onChange={(e) => handleItemChange(item.id, 'issuer', e.target.value)}
-              placeholder="Issuing Organization"
-              style={{ padding: '8px 12px', borderRadius: 8, border: '1px solid #CBD5E1', fontSize: '0.88rem' }}
+              placeholder="Issuing Organization (e.g. Amazon Web Services)"
+              style={{ padding: '8px 12px', borderRadius: 8, border: '1px solid #CBD5E1', outline: 'none', fontSize: '0.88rem' }}
             />
             <input
               type="text"
-              value={item.issueDate || ''}
-              onChange={(e) => handleItemChange(item.id, 'issueDate', e.target.value)}
-              placeholder="Year / Date"
-              style={{ padding: '8px 12px', borderRadius: 8, border: '1px solid #CBD5E1', fontSize: '0.88rem' }}
+              value={item.date || ''}
+              onChange={(e) => handleItemChange(item.id, 'date', e.target.value)}
+              placeholder="Issue Date (e.g. 2023)"
+              style={{ padding: '8px 12px', borderRadius: 8, border: '1px solid #CBD5E1', outline: 'none', fontSize: '0.88rem' }}
             />
           </div>
         </div>
@@ -79,3 +82,5 @@ export const Certifications: React.FC<CertificationsProps> = ({ items, onChange 
     </SectionCard>
   );
 };
+
+export default Certifications;

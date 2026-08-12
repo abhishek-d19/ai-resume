@@ -14,6 +14,8 @@ export * from './hiring-committee-consensus.schema';
 export * from './interview-question-generation.schema';
 export * from './resume-improvement-engine.schema';
 export * from './resume-rewrite.schema';
+export * from './resume-parser-engine.schema';
+export * from './resume-normalization.schema';
 
 export interface AiSchemaDefinition {
   name: string;

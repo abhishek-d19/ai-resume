@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { AIProvider, AiProviderName, AiGenerateParams, AiGenerateResult } from '../types';
-import { OpenAIProvider } from '../providers/OpenAIProvider';
+import { OpenAIProvider } from '../providers/OpenAiProvider';
 import { OpenRouterProvider } from '../providers/OpenRouterProvider';
 import { GeminiProvider } from '../providers/GeminiProvider';
 import { MockProvider } from '../providers/MockProvider';
